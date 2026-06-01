@@ -1,0 +1,507 @@
+import { useState } from "react";
+import { opportunityConfig, statusConfig, theme } from "../app/theme";
+import { getInitials } from "../utils/format";
+
+export function Badge({ status }) {
+  const config = statusConfig[status] || { label: status, color: "#666666", bg: "rgba(100,100,100,0.1)" };
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "3px 9px",
+        borderRadius: 20,
+        background: config.bg,
+        color: config.color,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: "0.02em",
+        whiteSpace: "nowrap"
+      }}
+    >
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: config.color, flexShrink: 0 }} />
+      {config.label}
+    </span>
+  );
+}
+
+export function Card({ children, style, onClick }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: theme.s2,
+        border: `1px solid ${hovered && onClick ? theme.borderStrong : theme.border}`,
+        borderRadius: 12,
+        padding: 20,
+        cursor: onClick ? "pointer" : "default",
+        transition: "border-color 120ms ease, transform 120ms ease",
+        transform: hovered && onClick ? "translateY(-1px)" : "translateY(0)",
+        ...style
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function Button({ variant = "primary", size = "md", children, onClick, disabled, style, type = "button" }) {
+  const [hovered, setHovered] = useState(false);
+  const padding = { sm: "6px 12px", md: "9px 16px", lg: "12px 22px" }[size];
+  const fontSize = { sm: 12, md: 13, lg: 14 }[size];
+  const styles = {
+    primary: { background: hovered ? "#00e87a" : theme.accent, color: "#000000", fontWeight: 700 },
+    secondary: {
+      background: hovered ? theme.s3 : theme.s2,
+      color: theme.text,
+      fontWeight: 500,
+      border: `1px solid ${theme.border}`
+    },
+    ghost: { background: "transparent", color: hovered ? theme.text : theme.muted, fontWeight: 500 },
+    accent: {
+      background: hovered ? "rgba(0,255,136,0.15)" : theme.accentBg,
+      color: theme.accent,
+      fontWeight: 600,
+      border: `1px solid ${theme.accentBorder}`
+    },
+    danger: {
+      background: hovered ? "rgba(255,68,85,0.18)" : theme.redBg,
+      color: theme.red,
+      fontWeight: 600,
+      border: "1px solid rgba(255,68,85,0.2)"
+    }
+  }[variant];
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        borderRadius: 9,
+        padding,
+        fontSize,
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.45 : 1,
+        border: "none",
+        transition: "all 120ms ease",
+        ...styles,
+        ...style
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function TopBar({ title, crumb, actions }) {
+  return (
+    <div
+      style={{
+        height: 58,
+        borderBottom: `1px solid ${theme.border}`,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 28px",
+        gap: 16,
+        flexShrink: 0,
+        background: theme.bg
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        {crumb ? (
+          <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{crumb}</div>
+        ) : null}
+        <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, letterSpacing: "-0.01em" }}>{title}</div>
+      </div>
+      {actions ? <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{actions}</div> : null}
+    </div>
+  );
+}
+
+export function Tag({ children, color }) {
+  const resolved = color || theme.muted;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "2px 8px",
+        borderRadius: 6,
+        background: `${resolved}18`,
+        color: resolved,
+        border: `1px solid ${resolved}30`,
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+        textTransform: "uppercase"
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function Metric({ label, value, sub, accent }) {
+  return (
+    <Card style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 32,
+          fontWeight: 800,
+          color: accent ? theme.accent : theme.text,
+          letterSpacing: "-0.03em",
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1
+        }}
+      >
+        {value}
+      </div>
+      {sub ? <div style={{ fontSize: 12, color: "#00bb66", marginTop: 8 }}>{sub}</div> : null}
+    </Card>
+  );
+}
+
+export function ScoreRing({ value, size = 76 }) {
+  const radius = size / 2 - 7;
+  const circumference = 2 * Math.PI * radius;
+  const dash = (value / 100) * circumference;
+  const color = value >= 70 ? theme.accent : value >= 50 ? theme.yellow : theme.red;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={theme.border} strokeWidth={6} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={6}
+        strokeDasharray={`${dash} ${circumference}`}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text
+        x={size / 2}
+        y={size / 2 + 1}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={color}
+        fontSize={17}
+        fontWeight="800"
+      >
+        {value}
+      </text>
+    </svg>
+  );
+}
+
+function NavItem({ id, label, icon, indent, active, onClick }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onClick={() => onClick(id)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        borderRadius: 8,
+        marginBottom: 2,
+        padding: indent ? "7px 10px 7px 26px" : "7px 10px",
+        background: active ? theme.accentBg : hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        color: active ? theme.accent : hovered ? theme.text : theme.muted,
+        fontSize: 13,
+        fontWeight: active ? 600 : 400,
+        cursor: "pointer",
+        transition: "all 100ms ease"
+      }}
+    >
+      <span style={{ flexShrink: 0, opacity: active ? 1 : 0.65 }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {active ? <span style={{ width: 4, height: 4, borderRadius: "50%", background: theme.accent, flexShrink: 0 }} /> : null}
+    </div>
+  );
+}
+
+export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut }) {
+  const navigation = [
+    { id: "dashboard", label: "Dashboard", icon: "▦" },
+    { id: "prospects", label: "Prospectos", icon: "◉" }
+  ];
+
+  const prospectNav = prospect
+    ? [
+        { id: "detail", label: "Ficha", icon: "□" },
+        { id: "analysis", label: "Análisis", icon: opportunityConfig.web.icon },
+        { id: "kitgen", label: "Kit", icon: "✦" },
+        { id: "assets", label: "Assets", icon: "▣" }
+      ]
+    : [];
+
+  return (
+    <div
+      style={{
+        width: theme.sidebarW,
+        flexShrink: 0,
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: theme.s1,
+        borderRight: `1px solid ${theme.border}`,
+        padding: "14px 10px",
+        overflowY: "auto"
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 10px 18px" }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: theme.accent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 900,
+            fontSize: 13,
+            color: "#000",
+            letterSpacing: "-0.04em",
+            flexShrink: 0
+          }}
+        >
+          R
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, lineHeight: 1.2 }}>ProspectKit</div>
+          <div style={{ fontSize: 10, color: theme.dim, lineHeight: 1 }}>{workspace?.name || "by RamosMKT"}</div>
+        </div>
+      </div>
+
+      {navigation.map((item) => (
+        <NavItem key={item.id} {...item} active={view === item.id} onClick={setView} />
+      ))}
+
+      {prospect ? (
+        <div style={{ marginTop: 16 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: theme.dim,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              fontWeight: 700,
+              padding: "0 10px 6px"
+            }}
+          >
+            {prospect.name.length > 18 ? `${prospect.name.slice(0, 17)}…` : prospect.name}
+          </div>
+          {prospectNav.map((item) => (
+            <NavItem key={item.id} {...item} indent active={view === item.id} onClick={setView} />
+          ))}
+        </div>
+      ) : null}
+
+      <div style={{ flex: 1 }} />
+
+      <div
+        style={{
+          padding: "10px",
+          borderRadius: 8,
+          background: theme.s2,
+          border: `1px solid ${theme.border}`,
+          display: "flex",
+          alignItems: "center",
+          gap: 10
+        }}
+      >
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: "50%",
+            background: theme.accentBg,
+            border: `1px solid ${theme.accentBorder}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: 800,
+            color: theme.accent,
+            flexShrink: 0
+          }}
+        >
+          {getInitials(profile?.fullName || "RM")}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: theme.text,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}
+          >
+            {profile?.fullName || "Usuario"}
+          </div>
+          <div style={{ fontSize: 10, color: theme.dim }}>{workspace?.slug || "owner"}</div>
+        </div>
+      </div>
+      <Button variant="ghost" size="sm" onClick={onSignOut} style={{ marginTop: 10, justifyContent: "flex-start" }}>
+        Cerrar sesión
+      </Button>
+    </div>
+  );
+}
+
+export function EmptyState({ title, description, actions }) {
+  return (
+    <Card
+      style={{
+        minHeight: 260,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: 28
+      }}
+    >
+      <div style={{ maxWidth: 420 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: theme.text, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 14, color: theme.muted, lineHeight: 1.7, marginBottom: 18 }}>{description}</div>
+        {actions ? <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>{actions}</div> : null}
+      </div>
+    </Card>
+  );
+}
+
+export function Field({ label, value, onChange, placeholder, textarea, rows = 4 }) {
+  const sharedStyle = {
+    background: theme.s3,
+    border: `1px solid ${theme.border}`,
+    borderRadius: 8,
+    padding: "10px 12px",
+    color: theme.text,
+    fontSize: 13,
+    outline: "none",
+    width: "100%"
+  };
+
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontSize: 11, color: theme.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+        {label}
+      </span>
+      {textarea ? (
+        <textarea
+          value={value}
+          rows={rows}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          style={{ ...sharedStyle, resize: "none", minHeight: 96 }}
+        />
+      ) : (
+        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} style={sharedStyle} />
+      )}
+    </label>
+  );
+}
+
+export function ModalFrame({ title, description, onClose, children }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        style={{
+          background: theme.s2,
+          border: `1px solid ${theme.borderStrong}`,
+          borderRadius: 14,
+          width: 520,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.7)"
+        }}
+      >
+        <div
+          style={{
+            padding: "20px 24px",
+            borderBottom: `1px solid ${theme.border}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: theme.text }}>{title}</div>
+            {description ? <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{description}</div> : null}
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: theme.muted, fontSize: 18 }}>
+            ×
+          </button>
+        </div>
+        <div style={{ padding: 24 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export function Toast({ tone = "success", message, onClose }) {
+  const color = tone === "error" ? theme.red : theme.accent;
+  const bg = tone === "error" ? theme.redBg : theme.accentBg;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        right: 20,
+        bottom: 20,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "12px 14px",
+        borderRadius: 10,
+        background: bg,
+        border: `1px solid ${tone === "error" ? "rgba(255,68,85,0.25)" : theme.accentBorder}`,
+        color,
+        minWidth: 260,
+        zIndex: 1200
+      }}
+    >
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{message}</span>
+      <button onClick={onClose} style={{ background: "transparent", border: "none", color }}>
+        ×
+      </button>
+    </div>
+  );
+}

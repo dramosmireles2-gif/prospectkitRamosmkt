@@ -1,0 +1,52 @@
+import { supabase } from "./supabase";
+import { wait } from "../utils/format";
+
+function normalizeWorkspace(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    ownerUserId: row.owner_user_id,
+    planCode: row.plan_code,
+    subscriptionStatus: row.subscription_status,
+    createdAt: row.created_at
+  };
+}
+
+function normalizeMember(row) {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    userId: row.user_id,
+    role: row.role,
+    createdAt: row.created_at
+  };
+}
+
+export async function getCurrentWorkspace(userId, attempt = 0) {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("id, workspace_id, user_id, role, created_at, workspaces(*)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data && attempt < 3) {
+    await wait(600);
+    return getCurrentWorkspace(userId, attempt + 1);
+  }
+
+  if (!data?.workspaces) {
+    return null;
+  }
+
+  return {
+    workspace: normalizeWorkspace(data.workspaces),
+    membership: normalizeMember(data)
+  };
+}
