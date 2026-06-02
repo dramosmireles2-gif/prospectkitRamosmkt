@@ -86,13 +86,17 @@ function AppContent() {
 
   async function loadProspects() {
     if (!workspace) {
+      setLoadingProspects(false);
       return;
     }
 
     setLoadingProspects(true);
-    const { prospects: rows } = await listProspects(workspace.id);
-    setProspects(sortProspects(rows));
-    setLoadingProspects(false);
+    try {
+      const { prospects: rows } = await listProspects(workspace.id);
+      setProspects(sortProspects(rows));
+    } finally {
+      setLoadingProspects(false);
+    }
   }
 
   function upsertProspect(nextProspect) {
