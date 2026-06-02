@@ -2,7 +2,7 @@ import { Button, Card, EmptyState, ScoreRing, Tag } from "../components/Primitiv
 import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 
-export function AnalysisScreen({ prospect, onGenerateAnalysis, onGenerateKit, onOpenAssets }) {
+export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets }) {
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Necesitas abrir un prospecto para revisar o generar análisis." />;
   }
@@ -61,6 +61,9 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onGenerateKit, on
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Análisis heurístico</div>
         </div>
+        <Button variant="ghost" size="sm" onClick={onRegenerateAnalysis}>
+          Regenerar
+        </Button>
         <Button variant="secondary" size="sm" onClick={onOpenAssets}>
           Crear assets
         </Button>

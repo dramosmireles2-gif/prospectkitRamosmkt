@@ -36,8 +36,9 @@ export async function getCurrentWorkspace(userId, attempt = 0) {
     throw error;
   }
 
-  if (!data && attempt < 3) {
-    await wait(600);
+  if (!data && attempt < 4) {
+    const delay = Math.min(500 * Math.pow(2, attempt), 4000);
+    await wait(delay);
     return getCurrentWorkspace(userId, attempt + 1);
   }
 

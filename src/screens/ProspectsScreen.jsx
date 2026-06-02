@@ -1,12 +1,47 @@
 import { useState } from "react";
 import { Badge, Button, Card, Field, ModalFrame } from "../components/Primitives";
 import { theme } from "../app/theme";
+import { INDUSTRIES } from "../app/constants";
+import { validateProspectForm } from "../utils/validation";
+import { exportProspectsCsv } from "../utils/exportCsv";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;
   if (score >= 70) return theme.yellow;
   if (score >= 55) return theme.blue;
   return theme.muted;
+}
+
+function IndustrySelect({ value, onChange, error }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontSize: 11, color: error ? theme.red : theme.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+        Industria *
+      </span>
+      <input
+        list="industry-options"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Selecciona o escribe..."
+        style={{
+          background: theme.s3,
+          border: `1px solid ${error ? "rgba(255,68,85,0.4)" : theme.border}`,
+          borderRadius: 8,
+          padding: "10px 12px",
+          color: theme.text,
+          fontSize: 13,
+          outline: "none",
+          width: "100%"
+        }}
+      />
+      <datalist id="industry-options">
+        {INDUSTRIES.map((ind) => (
+          <option key={ind} value={ind} />
+        ))}
+      </datalist>
+      {error ? <span style={{ fontSize: 11, color: theme.red, marginTop: -2 }}>{error}</span> : null}
+    </label>
+  );
 }
 
 function NewProspectModal({ onClose, onAdd, busy }) {
@@ -20,29 +55,34 @@ function NewProspectModal({ onClose, onAdd, busy }) {
     whatsapp: "",
     notes: ""
   });
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const valid = form.name.trim() && form.industry.trim() && form.city.trim();
+  function handleSubmit() {
+    const { valid, errors } = validateProspectForm(form);
+    setFieldErrors(errors);
+    if (valid) onAdd(form);
+  }
 
   return (
     <ModalFrame title="Nuevo prospecto" description="Agrega un negocio al workspace y calcula su oportunidad con heurística." onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <Field label="Nombre *" value={form.name} onChange={(value) => setForm((current) => ({ ...current, name: value }))} placeholder="Bella Cocina" />
+        <Field label="Nombre *" value={form.name} onChange={(value) => setForm((current) => ({ ...current, name: value }))} placeholder="Bella Cocina" error={fieldErrors.name} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Industria *" value={form.industry} onChange={(value) => setForm((current) => ({ ...current, industry: value }))} placeholder="Restaurante" />
-          <Field label="Ciudad *" value={form.city} onChange={(value) => setForm((current) => ({ ...current, city: value }))} placeholder="Monterrey, NL" />
+          <IndustrySelect value={form.industry} onChange={(value) => setForm((current) => ({ ...current, industry: value }))} error={fieldErrors.industry} />
+          <Field label="Ciudad *" value={form.city} onChange={(value) => setForm((current) => ({ ...current, city: value }))} placeholder="Monterrey, NL" error={fieldErrors.city} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Website" value={form.website} onChange={(value) => setForm((current) => ({ ...current, website: value }))} placeholder="ejemplo.com" />
-          <Field label="Instagram" value={form.instagram} onChange={(value) => setForm((current) => ({ ...current, instagram: value }))} placeholder="@usuario" />
+          <Field label="Website" value={form.website} onChange={(value) => setForm((current) => ({ ...current, website: value }))} placeholder="ejemplo.com" type="url" error={fieldErrors.website} />
+          <Field label="Instagram" value={form.instagram} onChange={(value) => setForm((current) => ({ ...current, instagram: value }))} placeholder="@usuario" error={fieldErrors.instagram} />
           <Field label="Facebook" value={form.facebook} onChange={(value) => setForm((current) => ({ ...current, facebook: value }))} placeholder="NombrePagina" />
-          <Field label="WhatsApp" value={form.whatsapp} onChange={(value) => setForm((current) => ({ ...current, whatsapp: value }))} placeholder="+52 81 0000 0000" />
+          <Field label="WhatsApp" value={form.whatsapp} onChange={(value) => setForm((current) => ({ ...current, whatsapp: value }))} placeholder="+52 81 0000 0000" type="tel" error={fieldErrors.whatsapp} />
         </div>
         <Field label="Notas" value={form.notes} onChange={(value) => setForm((current) => ({ ...current, notes: value }))} placeholder="Contexto del negocio, observaciones y oportunidades." textarea />
         <div style={{ display: "flex", gap: 10 }}>
           <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={() => onAdd(form)} disabled={!valid || busy} style={{ flex: 2 }}>
+          <Button variant="primary" onClick={handleSubmit} disabled={busy} style={{ flex: 2 }}>
             {busy ? "Guardando..." : "Crear prospecto"}
           </Button>
         </div>
@@ -111,7 +151,7 @@ function ProspectCard({ prospect, onOpen }) {
   );
 }
 
-export function ProspectsScreen({ prospects, onCreate, onOpenProspect, busy }) {
+export function ProspectsScreen({ prospects, onCreate, onOpenProspect, onDeleteProspect, busy }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -142,9 +182,14 @@ export function ProspectsScreen({ prospects, onCreate, onOpenProspect, busy }) {
         }}
       >
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>Ordenados por score de oportunidad</div>
+          <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospects.length} prospectos · ordenados por score</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Prospectos</div>
         </div>
+        {prospects.length > 0 ? (
+          <Button variant="ghost" size="sm" onClick={() => exportProspectsCsv(filtered)}>
+            Exportar CSV
+          </Button>
+        ) : null}
         <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
           + Nuevo prospecto
         </Button>

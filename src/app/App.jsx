@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Sidebar, Toast, EmptyState, Button } from "../components/Primitives";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "../contexts/WorkspaceContext";
 import { canUse, FEATURES } from "../services/featureFlags";
-import { buildDashboardMetrics, createProspect, ensureProspectAnalysis, ensureProspectKit, listProspects, seedDemoWorkspace, updateProspect } from "../services/prospects";
+import { buildDashboardMetrics, createProspect, deleteProspect, ensureProspectAnalysis, ensureProspectKit, listProspects, regenerateProspectAnalysis, regenerateProspectKit, seedDemoWorkspace, updateProspect } from "../services/prospects";
+import { VIEWS, PROSPECT_VIEWS } from "./constants";
 import { theme } from "./theme";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
 import { AssetsScreen } from "../screens/AssetsScreen";
@@ -52,7 +53,7 @@ function sortProspects(list) {
 function AppContent() {
   const { hasConfig, session, profile, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
-  const [view, setView] = useState("dashboard");
+  const [view, setView] = useState(VIEWS.DASHBOARD);
   const [prospects, setProspects] = useState([]);
   const [selectedProspectId, setSelectedProspectId] = useState(null);
   const [notice, setNotice] = useState("");
@@ -79,7 +80,7 @@ function AppContent() {
   useEffect(() => {
     if (selectedProspectId && !selectedProspect) {
       setSelectedProspectId(null);
-      setView("prospects");
+      setView(VIEWS.PROSPECTS);
     }
   }, [selectedProspectId, selectedProspect]);
 
@@ -89,7 +90,7 @@ function AppContent() {
     }
 
     setLoadingProspects(true);
-    const rows = await listProspects(workspace.id);
+    const { prospects: rows } = await listProspects(workspace.id);
     setProspects(sortProspects(rows));
     setLoadingProspects(false);
   }
@@ -100,8 +101,8 @@ function AppContent() {
   }
 
   function navigate(nextView) {
-    if (["detail", "analysis", "kitgen", "assets"].includes(nextView) && !selectedProspect) {
-      setView("prospects");
+    if (PROSPECT_VIEWS.includes(nextView) && !selectedProspect) {
+      setView(VIEWS.PROSPECTS);
       return;
     }
     setView(nextView);
@@ -140,7 +141,7 @@ function AppContent() {
     try {
       const created = await createProspect(workspace.id, form);
       upsertProspect(created);
-      setView("detail");
+      setView(VIEWS.DETAIL);
       setToast({ tone: "success", message: "Prospecto guardado en Supabase." });
     } finally {
       setBusy("");
@@ -153,7 +154,7 @@ function AppContent() {
     try {
       const nextProspect = await ensureProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
-      setView("analysis");
+      setView(VIEWS.ANALYSIS);
       setToast({ tone: "success", message: "Análisis persistido correctamente." });
       return nextProspect;
     } finally {
@@ -167,7 +168,7 @@ function AppContent() {
     try {
       const nextProspect = await ensureProspectKit(workspace.id, target);
       upsertProspect(nextProspect);
-      setView("kitgen");
+      setView(VIEWS.KIT);
       setToast({ tone: "success", message: "Kit guardado y listo para usar." });
       return nextProspect;
     } finally {
@@ -194,6 +195,21 @@ function AppContent() {
     }
   }
 
+  async function handleUpdateNotes(notes) {
+    if (!selectedProspect) return;
+    try {
+      const nextProspect = await updateProspect({
+        id: selectedProspect.id,
+        notes,
+        last_activity_at: new Date().toISOString()
+      });
+      upsertProspect(nextProspect);
+      setToast({ tone: "success", message: "Notas actualizadas." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudieron guardar las notas." });
+    }
+  }
+
   async function handleSeedDemo() {
     setBusy("demo");
     try {
@@ -207,6 +223,53 @@ function AppContent() {
       setBusy("");
     }
   }
+
+  async function handleDeleteProspect(prospect) {
+    setBusy("delete");
+    try {
+      await deleteProspect(prospect.id);
+      setProspects((current) => current.filter((item) => item.id !== prospect.id));
+      if (selectedProspectId === prospect.id) {
+        setSelectedProspectId(null);
+        setView(VIEWS.PROSPECTS);
+      }
+      setToast({ tone: "success", message: `${prospect.name} eliminado.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo eliminar el prospecto." });
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleRegenerateAnalysis(target = selectedProspect) {
+    if (!target) return null;
+    setBusy("analysis");
+    try {
+      const nextProspect = await regenerateProspectAnalysis(workspace.id, target);
+      upsertProspect(nextProspect);
+      setView(VIEWS.ANALYSIS);
+      setToast({ tone: "success", message: "Análisis regenerado correctamente." });
+      return nextProspect;
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleRegenerateKit(target = selectedProspect) {
+    if (!target) return null;
+    setBusy("kit");
+    try {
+      const nextProspect = await regenerateProspectKit(workspace.id, target);
+      upsertProspect(nextProspect);
+      setView(VIEWS.KIT);
+      setToast({ tone: "success", message: "Kit regenerado correctamente." });
+      return nextProspect;
+    } finally {
+      setBusy("");
+    }
+  }
+
+  const dismissToast = useCallback(() => setToast(null), []);
 
   if (!hasConfig) {
     return <SetupScreen />;
@@ -241,7 +304,7 @@ function AppContent() {
     />
   );
 
-  if (view === "prospects") {
+  if (view === VIEWS.PROSPECTS) {
     screen = (
       <ProspectsScreen
         prospects={prospects}
@@ -249,41 +312,53 @@ function AppContent() {
         busy={busy === "create"}
         onOpenProspect={(prospect) => {
           setSelectedProspectId(prospect.id);
-          setView(prospect.analysis ? "analysis" : "detail");
+          setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
         }}
+        onDeleteProspect={handleDeleteProspect}
       />
     );
   }
 
-  if (view === "detail") {
+  if (view === VIEWS.DETAIL) {
     screen = (
       <DetailScreen
         prospect={selectedProspect}
         busy={Boolean(busy)}
         onOpenView={navigate}
         onGenerateAnalysis={() => handleGenerateAnalysis(selectedProspect)}
+        onRegenerateAnalysis={() => handleRegenerateAnalysis(selectedProspect)}
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
         onMarkContacted={handleMarkContacted}
+        onDelete={() => selectedProspect && handleDeleteProspect(selectedProspect)}
+        onUpdateNotes={handleUpdateNotes}
       />
     );
   }
 
-  if (view === "analysis") {
+  if (view === VIEWS.ANALYSIS) {
     screen = (
       <AnalysisScreen
         prospect={selectedProspect}
         onGenerateAnalysis={() => handleGenerateAnalysis(selectedProspect)}
+        onRegenerateAnalysis={() => handleRegenerateAnalysis(selectedProspect)}
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
-        onOpenAssets={() => navigate("assets")}
+        onOpenAssets={() => navigate(VIEWS.ASSETS)}
       />
     );
   }
 
-  if (view === "kitgen") {
-    screen = <KitScreen prospect={selectedProspect} onGenerateKit={() => handleGenerateKit(selectedProspect)} onOpenAssets={() => navigate("assets")} />;
+  if (view === VIEWS.KIT) {
+    screen = (
+      <KitScreen
+        prospect={selectedProspect}
+        onGenerateKit={() => handleGenerateKit(selectedProspect)}
+        onRegenerateKit={() => handleRegenerateKit(selectedProspect)}
+        onOpenAssets={() => navigate(VIEWS.ASSETS)}
+      />
+    );
   }
 
-  if (view === "assets") {
+  if (view === VIEWS.ASSETS) {
     screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
   }
 
@@ -298,7 +373,7 @@ function AppContent() {
         onSignOut={signOut}
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>{loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}</div>
-      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
+      {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
     </div>
   );
 }
