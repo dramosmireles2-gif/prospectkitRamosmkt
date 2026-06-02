@@ -18,8 +18,7 @@ export function SetupScreen() {
           <div>
             <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", marginBottom: 8 }}>ProspectKit v1</div>
             <div style={{ fontSize: 15, color: theme.muted, lineHeight: 1.7 }}>
-              La app ya está migrada a Vite y espera una conexión real con Supabase para operar con auth, workspaces y
-              persistencia.
+              La app ya esta migrada a Vite y espera una conexion real con Supabase para operar con auth, workspaces y persistencia.
             </div>
           </div>
 
@@ -46,7 +45,7 @@ export function SetupScreen() {
                 Incluye
               </div>
               <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.8 }}>
-                Auth real, workspaces, prospects persistidos, análisis heurístico, kit guardado y exportación local de assets.
+                Auth real, workspaces, prospects persistidos, analisis heuristico, kit guardado y exportacion local de assets.
               </div>
             </Card>
             <Card style={{ padding: 18 }}>
@@ -54,18 +53,13 @@ export function SetupScreen() {
                 Preparado para SaaS
               </div>
               <div style={{ fontSize: 14, color: theme.text, lineHeight: 1.8 }}>
-                Planes, estado de suscripción, RLS, multi-tenant por workspace y gates de features listos para futuras
-                suscripciones.
+                Planes, estado de suscripcion, RLS, multi-tenant por workspace y gates de features listos para futuras suscripciones.
               </div>
             </Card>
           </div>
 
-          <Button
-            variant="secondary"
-            onClick={() => window.location.reload()}
-            style={{ alignSelf: "flex-start" }}
-          >
-            Reintentar después de configurar
+          <Button variant="secondary" onClick={() => window.location.reload()} style={{ alignSelf: "flex-start" }}>
+            Reintentar despues de configurar
           </Button>
         </div>
       </Card>

@@ -19,30 +19,44 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     async function bootstrap() {
-      const {
-        data: { session: currentSession }
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session: currentSession }
+        } = await supabase.auth.getSession();
 
-      if (!isMounted) {
-        return;
-      }
-
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        try {
-          const nextProfile = await getProfile(currentSession.user.id);
-          if (isMounted) {
-            setProfile(nextProfile);
-          }
-        } catch (error) {
-          console.error("Error loading profile", error);
+        if (!isMounted) {
+          return;
         }
-      }
 
-      if (isMounted) {
-        setLoading(false);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          try {
+            const nextProfile = await getProfile(currentSession.user.id);
+            if (isMounted) {
+              setProfile(nextProfile);
+            }
+          } catch (error) {
+            console.error("Error loading profile", error);
+            if (isMounted) {
+              setProfile(null);
+            }
+          }
+        } else if (isMounted) {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error("Error bootstrapping auth", error);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 

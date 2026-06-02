@@ -1,5 +1,19 @@
 import { supabase } from "./supabase";
 
+function getEmailRedirectUrl() {
+  const configuredUrl = import.meta.env.VITE_SITE_URL;
+
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  return undefined;
+}
+
 export async function signInWithPassword({ email, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
@@ -14,6 +28,7 @@ export async function signUpWithPassword({ fullName, email, password }) {
     email,
     password,
     options: {
+      emailRedirectTo: getEmailRedirectUrl(),
       data: {
         full_name: fullName
       }

@@ -13,8 +13,8 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
     return (
       <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
         <EmptyState
-          title="Tu workspace todavía está vacío"
-          description="Crea tu primer prospecto o importa demo data para revisar el flujo completo con análisis, kit y assets."
+          title="Tu workspace todavia esta vacio"
+          description="Crea tu primer prospecto o importa demo data para revisar el flujo completo con analisis, kit y assets."
           actions={
             <>
               <Button variant="primary" onClick={() => onOpenView("prospects")}>
@@ -107,7 +107,7 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
                     {topPick?.name}
                   </div>
                   <div style={{ fontSize: 13, color: theme.muted }}>
-                    {topPick?.industry} · {topPick?.city}
+                    {topPick?.industry} - {topPick?.city}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -131,7 +131,7 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
               {topPick?.analysis?.recommendedServices?.length ? (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 10 }}>
-                    Qué conviene vender primero
+                    Que conviene vender primero
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {topPick.analysis.recommendedServices.slice(0, 3).map((service) => (
@@ -198,7 +198,7 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
                 { label: "Prospectos", value: metrics.totalProspects },
                 { label: "Analizados", value: metrics.analyzedProspects },
                 { label: "Kits listos", value: metrics.kitsReady },
-                { label: "Pot. mínimo", value: formatCompactCurrency(metrics.revenueMinTotal) }
+                { label: "Pot. minimo", value: formatCompactCurrency(metrics.revenueMinTotal) }
               ].map((item) => (
                 <div key={item.label} style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 9, padding: "12px 14px" }}>
                   <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>
@@ -236,9 +236,7 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
                     </div>
                     <div style={{ fontSize: 10, color: theme.muted }}>{prospect.industry}</div>
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor(prospect.opportunityScore), flexShrink: 0 }}>
-                    {prospect.opportunityScore}
-                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 900, color: scoreColor(prospect.opportunityScore), flexShrink: 0 }}>{prospect.opportunityScore}</span>
                 </div>
               ))}
             </div>
