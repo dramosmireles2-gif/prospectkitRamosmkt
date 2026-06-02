@@ -77,4 +77,23 @@
  * @property {Array<{id: string, label: string, desc: string, targetView: string}>} recommendations
  */
 
+/**
+ * @typedef {Object} Profile
+ * @property {string} id
+ * @property {string} fullName
+ * @property {string} createdAt
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} valid
+ * @property {Object<string, string>} errors
+ */
+
+/**
+ * @typedef {Object} ListProspectsResult
+ * @property {Prospect[]} prospects
+ * @property {number} total
+ */
+
 export {};

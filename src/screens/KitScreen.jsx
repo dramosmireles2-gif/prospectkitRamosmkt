@@ -26,7 +26,7 @@ function SpinnerIcon() {
   );
 }
 
-export function KitScreen({ prospect, onGenerateKit, onOpenAssets }) {
+export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAssets }) {
   const [phase, setPhase] = useState(prospect?.kit ? "done" : "idle");
   const [step, setStep] = useState(0);
   const [tab, setTab] = useState("messages");
@@ -129,9 +129,14 @@ export function KitScreen({ prospect, onGenerateKit, onOpenAssets }) {
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Kit generator</div>
         </div>
         {phase === "done" ? (
-          <Button variant="secondary" size="sm" onClick={onOpenAssets}>
-            Crear assets
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" onClick={onRegenerateKit}>
+              Regenerar
+            </Button>
+            <Button variant="secondary" size="sm" onClick={onOpenAssets}>
+              Crear assets
+            </Button>
+          </>
         ) : null}
       </div>
 

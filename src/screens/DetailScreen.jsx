@@ -1,4 +1,5 @@
-import { Badge, Button, Card, EmptyState } from "../components/Primitives";
+import { useState } from "react";
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatDateLabel, formatRelativeTime } from "../utils/format";
 
@@ -27,7 +28,11 @@ function SocialRow({ icon, label, value }) {
   );
 }
 
-export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onGenerateKit, onMarkContacted, busy }) {
+export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, busy }) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [draftNotes, setDraftNotes] = useState("");
+
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Abre un prospecto desde el dashboard o el listado para revisar su ficha." />;
   }
@@ -123,10 +128,31 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onGener
           </Card>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Card style={{ padding: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Notas</div>
-              <div style={{ fontSize: 13, color: prospect.notes ? theme.text : theme.dim, lineHeight: 1.65 }}>
-                {prospect.notes || "Sin notas."}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Notas</div>
+                {editingNotes ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingNotes(false)}>Cancelar</Button>
+                    <Button variant="primary" size="sm" onClick={() => { onUpdateNotes(draftNotes); setEditingNotes(false); }}>Guardar</Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => { setDraftNotes(prospect.notes || ""); setEditingNotes(true); }}>Editar</Button>
+                )}
               </div>
+              {editingNotes ? (
+                <Field
+                  label=""
+                  value={draftNotes}
+                  onChange={setDraftNotes}
+                  placeholder="Agrega notas sobre el prospecto..."
+                  textarea
+                  rows={4}
+                />
+              ) : (
+                <div style={{ fontSize: 13, color: prospect.notes ? theme.text : theme.dim, lineHeight: 1.65 }}>
+                  {prospect.notes || "Sin notas. Haz clic en Editar para agregar."}
+                </div>
+              )}
             </Card>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {[
@@ -158,19 +184,36 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onGener
           <Card>
             <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 10 }}>Acciones</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <Button variant="secondary" size="sm" onClick={onGenerateAnalysis} disabled={busy}>
+              <Button variant="secondary" size="sm" onClick={prospect.analysis ? onRegenerateAnalysis : onGenerateAnalysis} disabled={busy}>
                 {prospect.analysis ? "Regenerar análisis" : "Generar análisis"}
               </Button>
               <Button variant="accent" size="sm" onClick={onGenerateKit} disabled={busy}>
                 {prospect.kit ? "Actualizar kit" : "Generar kit"}
               </Button>
-              <Button variant="ghost" size="sm" onClick={onMarkContacted}>
-                Marcar contactado
+              {prospect.status !== "contacted" ? (
+                <Button variant="ghost" size="sm" onClick={onMarkContacted} disabled={busy}>
+                  Marcar contactado
+                </Button>
+              ) : null}
+              <Button variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={busy}>
+                Eliminar prospecto
               </Button>
             </div>
           </Card>
         </div>
       </div>
+      {showDeleteConfirm ? (
+        <ConfirmDialog
+          title="Eliminar prospecto"
+          message={`¿Estás seguro de que quieres eliminar "${prospect.name}"? Se borrarán también su análisis y kit. Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            onDelete();
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      ) : null}
     </div>
   );
 }

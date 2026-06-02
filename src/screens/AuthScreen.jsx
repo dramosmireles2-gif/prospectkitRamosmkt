@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button, Card, Field } from "../components/Primitives";
 import { theme } from "../app/theme";
+import { validateAuthForm } from "../utils/validation";
 
 export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
   const [mode, setMode] = useState("signin");
@@ -10,11 +11,16 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
     password: ""
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const isSignUp = mode === "signup";
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+
+    const { valid, errors } = validateAuthForm(form, isSignUp);
+    setFieldErrors(errors);
+    if (!valid) return;
 
     try {
       if (isSignUp) {
@@ -23,8 +29,21 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
         await onSignIn(form);
       }
     } catch (nextError) {
-      setError(nextError.message || "No se pudo autenticar.");
+      const msg = nextError.message || "";
+      if (msg.includes("Invalid login")) {
+        setError("Email o contraseña incorrectos.");
+      } else if (msg.includes("already registered")) {
+        setError("Este email ya tiene una cuenta. Inicia sesión.");
+      } else {
+        setError(msg || "No se pudo autenticar. Intenta de nuevo.");
+      }
     }
+  }
+
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    setError("");
+    setFieldErrors({});
   }
 
   return (
@@ -51,10 +70,10 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-          <Button variant={mode === "signin" ? "primary" : "secondary"} size="sm" onClick={() => setMode("signin")}>
+          <Button variant={mode === "signin" ? "primary" : "secondary"} size="sm" onClick={() => switchMode("signin")}>
             Iniciar sesión
           </Button>
-          <Button variant={mode === "signup" ? "primary" : "secondary"} size="sm" onClick={() => setMode("signup")}>
+          <Button variant={mode === "signup" ? "primary" : "secondary"} size="sm" onClick={() => switchMode("signup")}>
             Crear cuenta
           </Button>
         </div>
@@ -66,19 +85,27 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
               value={form.fullName}
               onChange={(value) => setForm((current) => ({ ...current, fullName: value }))}
               placeholder="Carlos Ramos"
+              autoComplete="name"
+              error={fieldErrors.fullName}
             />
           ) : null}
           <Field
             label="Email"
+            type="email"
             value={form.email}
             onChange={(value) => setForm((current) => ({ ...current, email: value }))}
             placeholder="tu@email.com"
+            autoComplete="email"
+            error={fieldErrors.email}
           />
           <Field
             label="Password"
+            type="password"
             value={form.password}
             onChange={(value) => setForm((current) => ({ ...current, password: value }))}
             placeholder="Mínimo 6 caracteres"
+            autoComplete={isSignUp ? "new-password" : "current-password"}
+            error={fieldErrors.password}
           />
 
           {error ? <div style={{ fontSize: 13, color: theme.red }}>{error}</div> : null}

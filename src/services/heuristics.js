@@ -31,6 +31,30 @@ const industryPlaybooks = {
     painPoints: ["pedidos por WhatsApp", "catálogo", "campañas estacionales", "reseñas locales"],
     multipliers: { social: 1.15, web: 1.1, gmb: 1.05 }
   },
+  belleza: {
+    features: ["Sitio web", "Google My Business", "WhatsApp integrado", "Instagram activo", "Sistema de citas", "Meta Ads activos"],
+    services: ["Landing Page", "Google My Business", "WhatsApp Business", "Meta Ads locales"],
+    painPoints: ["citas online", "portafolio visual", "reseñas locales", "captación por redes"],
+    multipliers: { web: 1.1, gmb: 1.15, social: 1.2, ads: 1.05 }
+  },
+  fitness: {
+    features: ["Sitio web", "Google My Business", "Instagram activo", "WhatsApp integrado", "Sistema de reservas", "Meta Ads activos"],
+    services: ["Landing Page", "Google My Business", "Meta Ads locales", "Contenido orgánico"],
+    painPoints: ["retención de alumnos", "captación local", "calendario de clases", "comunidad digital"],
+    multipliers: { web: 1.1, gmb: 1.15, social: 1.1, ads: 1.1 }
+  },
+  inmobiliaria: {
+    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "CRM de leads", "Contenido activo"],
+    services: ["Landing Page", "Meta Ads locales", "Google My Business", "WhatsApp Business"],
+    painPoints: ["captación de leads", "seguimiento", "visibilidad de propiedades", "confianza digital"],
+    multipliers: { web: 1.2, ads: 1.25, gmb: 1.1, social: 0.95 }
+  },
+  educacion: {
+    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "Landing de cursos"],
+    services: ["Landing Page", "Google My Business", "Meta Ads locales", "WhatsApp Business"],
+    painPoints: ["inscripciones", "visibilidad local", "confianza institucional", "seguimiento de interesados"],
+    multipliers: { web: 1.15, gmb: 1.1, ads: 1.1, social: 1 }
+  },
   default: {
     features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "Contenido activo"],
     services: ["Landing Page", "Google My Business", "Meta Ads locales", "WhatsApp Business"],
@@ -99,11 +123,15 @@ const serviceCatalog = {
 function getPlaybook(industry = "") {
   const key = industry.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-  if (key.includes("restaur")) return industryPlaybooks.restaurante;
-  if (key.includes("auto") || key.includes("taller")) return industryPlaybooks.automotriz;
-  if (key.includes("foto")) return industryPlaybooks.fotografia;
-  if (key.includes("salud") || key.includes("farmac")) return industryPlaybooks.salud;
-  if (key.includes("reposter") || key.includes("pastel")) return industryPlaybooks.reposteria;
+  if (key.includes("restaur") || key.includes("comida") || key.includes("cocina")) return industryPlaybooks.restaurante;
+  if (key.includes("auto") || key.includes("taller") || key.includes("mecanico")) return industryPlaybooks.automotriz;
+  if (key.includes("foto") || key.includes("video") || key.includes("produc")) return industryPlaybooks.fotografia;
+  if (key.includes("salud") || key.includes("farmac") || key.includes("medic") || key.includes("dental") || key.includes("clinic")) return industryPlaybooks.salud;
+  if (key.includes("reposter") || key.includes("pastel") || key.includes("panader")) return industryPlaybooks.reposteria;
+  if (key.includes("belleza") || key.includes("salon") || key.includes("estetica") || key.includes("spa") || key.includes("peluquer")) return industryPlaybooks.belleza;
+  if (key.includes("fitness") || key.includes("gym") || key.includes("gimnasio") || key.includes("yoga") || key.includes("crossfit")) return industryPlaybooks.fitness;
+  if (key.includes("inmobil") || key.includes("bienes raices") || key.includes("real estate")) return industryPlaybooks.inmobiliaria;
+  if (key.includes("educa") || key.includes("escuela") || key.includes("academia") || key.includes("curso")) return industryPlaybooks.educacion;
   return industryPlaybooks.default;
 }
 

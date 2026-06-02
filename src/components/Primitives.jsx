@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { opportunityConfig, statusConfig, theme } from "../app/theme";
 import { getInitials } from "../utils/format";
 
@@ -392,10 +392,11 @@ export function EmptyState({ title, description, actions }) {
   );
 }
 
-export function Field({ label, value, onChange, placeholder, textarea, rows = 4 }) {
+export function Field({ label, value, onChange, placeholder, textarea, rows = 4, type = "text", error, autoComplete }) {
+  const hasError = Boolean(error);
   const sharedStyle = {
     background: theme.s3,
-    border: `1px solid ${theme.border}`,
+    border: `1px solid ${hasError ? "rgba(255,68,85,0.4)" : theme.border}`,
     borderRadius: 8,
     padding: "10px 12px",
     color: theme.text,
@@ -406,7 +407,7 @@ export function Field({ label, value, onChange, placeholder, textarea, rows = 4 
 
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 11, color: theme.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+      <span style={{ fontSize: 11, color: hasError ? theme.red : theme.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>
         {label}
       </span>
       {textarea ? (
@@ -418,15 +419,34 @@ export function Field({ label, value, onChange, placeholder, textarea, rows = 4 
           style={{ ...sharedStyle, resize: "none", minHeight: 96 }}
         />
       ) : (
-        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} style={sharedStyle} />
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          style={sharedStyle}
+        />
       )}
+      {hasError ? <span style={{ fontSize: 11, color: theme.red, marginTop: -2 }}>{error}</span> : null}
     </label>
   );
 }
 
 export function ModalFrame({ title, description, onClose, children }) {
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
       style={{
         position: "fixed",
         inset: 0,
@@ -477,7 +497,60 @@ export function ModalFrame({ title, description, onClose, children }) {
   );
 }
 
-export function Toast({ tone = "success", message, onClose }) {
+export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onConfirm, onCancel }) {
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1100
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
+      <div
+        style={{
+          background: theme.s2,
+          border: `1px solid ${theme.borderStrong}`,
+          borderRadius: 14,
+          padding: 24,
+          width: 380,
+          boxShadow: "0 32px 80px rgba(0,0,0,0.7)"
+        }}
+      >
+        <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.6, marginBottom: 20 }}>{message}</div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <Button variant="secondary" size="sm" onClick={onCancel}>Cancelar</Button>
+          <Button variant="danger" size="sm" onClick={onConfirm}>{confirmLabel}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Toast({ tone = "success", message, onClose, duration = 3500 }) {
+  useEffect(() => {
+    if (duration > 0) {
+      const timer = setTimeout(onClose, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [duration, onClose]);
+
   const color = tone === "error" ? theme.red : theme.accent;
   const bg = tone === "error" ? theme.redBg : theme.accentBg;
   return (
@@ -495,11 +568,12 @@ export function Toast({ tone = "success", message, onClose }) {
         border: `1px solid ${tone === "error" ? "rgba(255,68,85,0.25)" : theme.accentBorder}`,
         color,
         minWidth: 260,
-        zIndex: 1200
+        zIndex: 1200,
+        animation: "fadeIn 200ms ease"
       }}
     >
       <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "transparent", border: "none", color }}>
+      <button onClick={onClose} style={{ background: "transparent", border: "none", color, cursor: "pointer" }}>
         ×
       </button>
     </div>

@@ -82,19 +82,20 @@ async function fetchProspectById(prospectId) {
   return normalizeProspect(data);
 }
 
-export async function listProspects(workspaceId) {
-  const { data, error } = await supabase
+export async function listProspects(workspaceId, { limit = 50, offset = 0 } = {}) {
+  const { data, error, count } = await supabase
     .from("prospects")
-    .select("*, prospect_analyses(*), prospect_kits(*)")
+    .select("*, prospect_analyses(*), prospect_kits(*)", { count: "exact" })
     .eq("workspace_id", workspaceId)
     .order("opportunity_score", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     throw error;
   }
 
-  return (data || []).map(normalizeProspect);
+  return { prospects: (data || []).map(normalizeProspect), total: count || 0 };
 }
 
 export async function createProspect(workspaceId, input) {
@@ -135,6 +136,17 @@ export async function updateProspect(input) {
   }
 
   return fetchProspectById(id);
+}
+
+export async function deleteProspect(prospectId) {
+  const { error: kitError } = await supabase.from("prospect_kits").delete().eq("prospect_id", prospectId);
+  if (kitError) throw kitError;
+
+  const { error: analysisError } = await supabase.from("prospect_analyses").delete().eq("prospect_id", prospectId);
+  if (analysisError) throw analysisError;
+
+  const { error } = await supabase.from("prospects").delete().eq("id", prospectId);
+  if (error) throw error;
 }
 
 export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }) {
@@ -207,6 +219,15 @@ export async function ensureProspectAnalysis(workspaceId, prospect) {
   });
 }
 
+export async function regenerateProspectAnalysis(workspaceId, prospect) {
+  const analysis = generateProspectAnalysis(prospect);
+  return saveProspectAnalysis({
+    workspaceId,
+    prospectId: prospect.id,
+    analysis
+  });
+}
+
 export async function ensureProspectKit(workspaceId, prospect) {
   const analyzedProspect = prospect.analysis ? prospect : await ensureProspectAnalysis(workspaceId, prospect);
   if (analyzedProspect.kit) {
@@ -221,8 +242,18 @@ export async function ensureProspectKit(workspaceId, prospect) {
   });
 }
 
+export async function regenerateProspectKit(workspaceId, prospect) {
+  const analyzedProspect = prospect.analysis ? prospect : await ensureProspectAnalysis(workspaceId, prospect);
+  const kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
+  return saveProspectKit({
+    workspaceId,
+    prospectId: analyzedProspect.id,
+    kit
+  });
+}
+
 export async function getDashboardMetrics(workspaceId) {
-  const prospects = await listProspects(workspaceId);
+  const { prospects } = await listProspects(workspaceId);
   return buildDashboardMetrics(prospects);
 }
 
@@ -253,7 +284,7 @@ export function buildDashboardMetrics(prospects) {
 }
 
 export async function seedDemoWorkspace(workspaceId) {
-  const existing = await listProspects(workspaceId);
+  const { prospects: existing } = await listProspects(workspaceId);
   if (existing.length > 0) {
     return existing;
   }
@@ -275,5 +306,6 @@ export async function seedDemoWorkspace(workspaceId) {
     }
   }
 
-  return listProspects(workspaceId);
+  const { prospects: allProspects } = await listProspects(workspaceId);
+  return allProspects;
 }

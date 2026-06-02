@@ -43,4 +43,35 @@ describe("heuristics", () => {
     expect(kit.proposalSnapshot.before.length).toBeGreaterThan(0);
     expect(kit.proposalSnapshot.after.length).toBeGreaterThan(0);
   });
+
+  it("reconoce industrias nuevas (belleza, fitness, inmobiliaria)", () => {
+    const belleza = generateProspectAnalysis({ ...thinProspect, industry: "Belleza" });
+    expect(belleza.recommendedServices.length).toBeGreaterThan(0);
+
+    const fitness = generateProspectAnalysis({ ...thinProspect, industry: "Gimnasio" });
+    expect(fitness.recommendedServices.length).toBeGreaterThan(0);
+
+    const inmob = generateProspectAnalysis({ ...thinProspect, industry: "Inmobiliaria" });
+    expect(inmob.recommendedServices.length).toBeGreaterThan(0);
+  });
+
+  it("genera kit con email que contiene subject y body", () => {
+    const analysis = generateProspectAnalysis(richProspect);
+    const kit = generateProspectKit(richProspect, analysis);
+    expect(kit.channelMessages.email.subject).toBeTruthy();
+    expect(kit.channelMessages.email.body).toContain("Bella Cocina");
+  });
+
+  it("produce revenue max mayor que revenue min", () => {
+    const analysis = generateProspectAnalysis(thinProspect);
+    expect(analysis.revenue.max).toBeGreaterThan(analysis.revenue.min);
+    expect(analysis.revenue.min).toBeGreaterThan(0);
+  });
+
+  it("clampa score entre 40 y 96", () => {
+    expect(estimateOpportunityScore(thinProspect)).toBeLessThanOrEqual(96);
+    expect(estimateOpportunityScore(thinProspect)).toBeGreaterThanOrEqual(40);
+    expect(estimateOpportunityScore(richProspect)).toBeLessThanOrEqual(96);
+    expect(estimateOpportunityScore(richProspect)).toBeGreaterThanOrEqual(40);
+  });
 });
