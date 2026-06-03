@@ -302,42 +302,60 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
     return (
       <div
         style={{
-          height: 56,
           width: "100%",
+          display: "block",
           flexShrink: 0,
-          display: "flex",
-          flexDirection: "row",
-          background: theme.bg,
+          minHeight: 82,
+          boxSizing: "border-box",
+          padding: "8px 10px calc(env(safe-area-inset-bottom, 0px) + 10px)",
+          background: "rgba(10,10,10,0.94)",
           borderTop: `1px solid ${theme.border}`,
+          backdropFilter: "blur(18px)",
           zIndex: 100
         }}
       >
-        {navigation.map((item) => {
-          const active = view === item.id;
-          return (
-            <div
-              key={item.id}
-              onClick={() => setView(item.id)}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 2,
-                cursor: "pointer",
-                color: active ? theme.accent : theme.dim,
-                background: active ? theme.accentBg : "transparent",
-                transition: "all 100ms ease"
-              }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{item.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1 }}>
-                {item.id === "attack" ? "Ataque" : item.label}
-              </span>
-            </div>
-          );
-        })}
+        <div
+          style={{
+            width: "100%",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 8,
+            padding: 6,
+            background: theme.s1,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 18,
+            boxShadow: "0 -8px 24px rgba(0,0,0,0.28)"
+          }}
+        >
+          {navigation.map((item) => {
+            const active = view === item.id;
+            return (
+              <div
+                key={item.id}
+                onClick={() => setView(item.id)}
+                style={{
+                  minHeight: 54,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                  color: active ? theme.accent : theme.muted,
+                  background: active ? "linear-gradient(180deg, rgba(0,255,136,0.14) 0%, rgba(0,255,136,0.07) 100%)" : "transparent",
+                  border: active ? `1px solid ${theme.accentBorder}` : "1px solid transparent",
+                  borderRadius: 14,
+                  transition: "all 120ms ease"
+                }}
+              >
+                <span style={{ fontSize: 17, lineHeight: 1, opacity: active ? 1 : 0.8 }}>{item.icon}</span>
+                <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, lineHeight: 1 }}>
+                  {item.id === "attack" ? "Ataque" : item.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

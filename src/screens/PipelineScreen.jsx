@@ -172,7 +172,7 @@ function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDrag
   );
 }
 
-function PipelineMetrics({ prospects }) {
+function PipelineMetrics({ prospects, isMobile = false }) {
   const total = prospects.length;
   const ganados = prospects.filter(p => p.pipelineStage === "ganado").length;
   const activos = prospects.filter(p => !["ganado", "perdido"].includes(p.pipelineStage)).length;
@@ -189,6 +189,29 @@ function PipelineMetrics({ prospects }) {
     { label: "Tasa de cierre",     value: `${tasaCierre}%`, color: theme.yellow },
     { label: "Pipeline total",     value: formatCurrency(revenueTotal), color: theme.purple }
   ];
+
+  if (isMobile) {
+    return (
+      <div style={{ width: "100%", maxWidth: "100%", alignSelf: "stretch", display: "flex", gap: 10, overflowX: "auto", paddingBottom: 14, scrollbarWidth: "none", boxSizing: "border-box" }}>
+        {metrics.map((m) => (
+          <div key={m.label} style={{
+            minWidth: 132,
+            background: `linear-gradient(180deg, ${theme.s2} 0%, ${theme.s1} 100%)`,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 14,
+            padding: "12px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            flexShrink: 0
+          }}>
+            <div style={{ fontSize: 19, fontWeight: 900, color: m.color, letterSpacing: "-0.02em" }}>{m.value}</div>
+            <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", lineHeight: 1.3 }}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", gap: 10, padding: "0 24px 16px", flexWrap: "wrap" }}>
@@ -250,18 +273,30 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
         <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, letterSpacing: "-0.02em" }}>Pipeline</div>
       </div>
 
-      {/* Metrics bar */}
-      <div style={{ flexShrink: 0, paddingTop: 14 }}>
-        <PipelineMetrics prospects={prospects} />
-      </div>
+      {!isMobile ? (
+        <div style={{ flexShrink: 0, paddingTop: 14 }}>
+          <PipelineMetrics prospects={prospects} />
+        </div>
+      ) : (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "12px 16px 8px",
+            background: "rgba(10,10,10,0.92)",
+            borderBottom: `1px solid ${theme.border}`,
+            backdropFilter: "blur(16px)"
+          }}
+        >
+          <PipelineMetrics prospects={prospects} isMobile={true} />
+        </div>
+      )}
 
-      {/* Kanban board */}
       <div
         style={{
           flex: 1,
           overflowX: isMobile ? "hidden" : "auto",
           overflowY: isMobile ? "auto" : "hidden",
-          padding: isMobile ? "0 16px 24px" : "0 24px 24px",
+          padding: isMobile ? "12px 16px 24px" : "0 24px 24px",
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           gap: 10,
