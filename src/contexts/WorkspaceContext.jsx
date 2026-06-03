@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getCurrentWorkspace } from "../services/workspace";
 import { useAuth } from "./AuthContext";
 
@@ -9,6 +9,7 @@ export function WorkspaceProvider({ children }) {
   const [workspace, setWorkspace] = useState(null);
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(Boolean(hasConfig));
+  const timeoutRef = useRef(null);
 
   async function refreshWorkspace() {
     if (!hasConfig || !user) {
@@ -19,31 +20,38 @@ export function WorkspaceProvider({ children }) {
     }
 
     setLoading(true);
-    const result = await getCurrentWorkspace(user.id);
-    setWorkspace(result?.workspace ?? null);
-    setMembership(result?.membership ?? null);
-    setLoading(false);
-    return result;
-  }
 
-  useEffect(() => {
-    refreshWorkspace().catch((error) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      console.error("Workspace load timeout");
+      setLoading(false);
+    }, 10000);
+
+    try {
+      const result = await getCurrentWorkspace(user.id);
+      setWorkspace(result?.workspace ?? null);
+      setMembership(result?.membership ?? null);
+      return result;
+    } catch (error) {
       console.error("Error loading workspace", error);
       setWorkspace(null);
       setMembership(null);
+      return null;
+    } finally {
+      clearTimeout(timeoutRef.current);
       setLoading(false);
-    });
+    }
+  }
+
+  useEffect(() => {
+    refreshWorkspace();
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [hasConfig, user?.id]);
 
   return (
-    <WorkspaceContext.Provider
-      value={{
-        workspace,
-        membership,
-        loading,
-        refreshWorkspace
-      }}
-    >
+    <WorkspaceContext.Provider value={{ workspace, membership, loading, refreshWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );
@@ -54,6 +62,5 @@ export function useWorkspace() {
   if (!context) {
     throw new Error("useWorkspace must be used inside WorkspaceProvider");
   }
-
   return context;
 }
