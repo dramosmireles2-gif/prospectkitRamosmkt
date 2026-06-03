@@ -65,7 +65,15 @@ Reglas:
 
     return res.status(200).json({ kit });
   } catch (error) {
-    console.error("generate-kit error:", error);
-    return res.status(500).json({ error: error.message || "Error generando kit" });
+    console.error("generate-kit error:", {
+      message: error.message,
+      status: error.status,
+      type: error.type,
+      name: error.name
+    });
+    return res.status(500).json({
+      error: "Claude no pudo generar el kit. Se usará fallback local.",
+      detail: error.message
+    });
   }
 }

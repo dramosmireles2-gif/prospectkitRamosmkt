@@ -361,35 +361,67 @@ export function estimateOpportunityScore(prospect) {
 }
 
 export async function generateProspectAnalysisAI(prospect) {
-  const res = await fetch("/api/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prospect })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 26000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `API error ${res.status}`);
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prospect }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `API error ${res.status}`);
+    }
+
+    const { analysis } = await res.json();
+    if (!analysis || typeof analysis !== "object") {
+      throw new Error("La API de análisis no devolvió un análisis válido.");
+    }
+    return analysis;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Timeout: Claude tardó demasiado, se usará análisis local.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const { analysis } = await res.json();
-  return analysis;
 }
 
 export async function generateProspectKitAI(prospect, analysis) {
-  const res = await fetch("/api/generate-kit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prospect, analysis })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 26000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `API error ${res.status}`);
+  try {
+    const res = await fetch("/api/generate-kit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prospect, analysis }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `API error ${res.status}`);
+    }
+
+    const { kit } = await res.json();
+    if (!kit || typeof kit !== "object") {
+      throw new Error("La API de kit no devolvió un kit válido.");
+    }
+    return kit;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Timeout: Claude tardó demasiado, se usará kit local.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const { kit } = await res.json();
-  return kit;
 }
 
 export function generateProspectAnalysis(prospect) {

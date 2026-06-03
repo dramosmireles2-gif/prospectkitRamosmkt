@@ -111,7 +111,15 @@ Reglas:
 
     return res.status(200).json({ analysis });
   } catch (error) {
-    console.error("analyze error:", error);
-    return res.status(500).json({ error: error.message || "Error generando análisis" });
+    console.error("analyze error:", {
+      message: error.message,
+      status: error.status,
+      type: error.type,
+      name: error.name
+    });
+    return res.status(500).json({
+      error: "Claude no pudo generar el análisis. Se usará fallback local.",
+      detail: error.message
+    });
   }
 }

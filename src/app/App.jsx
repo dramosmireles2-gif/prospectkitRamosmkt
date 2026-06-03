@@ -193,8 +193,12 @@ function AppContent() {
       const nextProspect = await ensureProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
       setView(VIEWS.ANALYSIS);
-      setToast({ tone: "success", message: "Analisis persistido correctamente." });
+      setToast({ tone: "success", message: "Analisis generado correctamente." });
       return nextProspect;
+    } catch (error) {
+      console.error("handleGenerateAnalysis failed", error);
+      setToast({ tone: "error", message: error.message || "No se pudo guardar el analisis." });
+      return null;
     } finally {
       setBusy("");
     }
@@ -288,6 +292,10 @@ function AppContent() {
       setView(VIEWS.ANALYSIS);
       setToast({ tone: "success", message: "Analisis regenerado correctamente." });
       return nextProspect;
+    } catch (error) {
+      console.error("handleRegenerateAnalysis failed", error);
+      setToast({ tone: "error", message: error.message || "No se pudo regenerar el analisis." });
+      return null;
     } finally {
       setBusy("");
     }

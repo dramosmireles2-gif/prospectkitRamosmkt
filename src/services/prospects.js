@@ -212,24 +212,59 @@ export async function ensureProspectAnalysis(workspaceId, prospect) {
   }
 
   let analysis;
+  let usedFallback = false;
+
   try {
     analysis = await generateProspectAnalysisAI(prospect);
-  } catch {
+  } catch (error) {
+    console.warn("Claude analysis unavailable; using heuristic fallback", {
+      prospectId: prospect.id,
+      message: error.message
+    });
     analysis = generateProspectAnalysis(prospect);
+    usedFallback = true;
   }
 
-  return saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
+  try {
+    return await saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
+  } catch (error) {
+    console.error("Failed to save prospect analysis", {
+      prospectId: prospect.id,
+      workspaceId,
+      source: analysis?.source,
+      usedFallback,
+      message: error.message
+    });
+    throw error;
+  }
 }
 
 export async function regenerateProspectAnalysis(workspaceId, prospect) {
   let analysis;
+  let usedFallback = false;
+
   try {
     analysis = await generateProspectAnalysisAI(prospect);
-  } catch {
+  } catch (error) {
+    console.warn("Claude analysis unavailable; using heuristic fallback", {
+      prospectId: prospect.id,
+      message: error.message
+    });
     analysis = generateProspectAnalysis(prospect);
+    usedFallback = true;
   }
 
-  return saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
+  try {
+    return await saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
+  } catch (error) {
+    console.error("Failed to save regenerated analysis", {
+      prospectId: prospect.id,
+      source: analysis?.source,
+      usedFallback,
+      message: error.message
+    });
+    throw error;
+  }
 }
 
 export async function ensureProspectKit(workspaceId, prospect) {
@@ -241,7 +276,8 @@ export async function ensureProspectKit(workspaceId, prospect) {
   let kit;
   try {
     kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
-  } catch {
+  } catch (error) {
+    console.warn("Claude kit unavailable; using heuristic fallback", { message: error.message });
     kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
   }
 
@@ -254,7 +290,8 @@ export async function regenerateProspectKit(workspaceId, prospect) {
   let kit;
   try {
     kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
-  } catch {
+  } catch (error) {
+    console.warn("Claude kit unavailable; using heuristic fallback", { message: error.message });
     kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
   }
 
