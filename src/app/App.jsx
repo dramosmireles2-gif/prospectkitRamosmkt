@@ -13,7 +13,9 @@ import {
   regenerateProspectAnalysis,
   regenerateProspectKit,
   seedDemoWorkspace,
-  updateProspect
+  updateProspect,
+  updatePipelineStage,
+  updateNextAction
 } from "../services/prospects";
 import { VIEWS, PROSPECT_VIEWS } from "./constants";
 import { theme } from "./theme";
@@ -23,6 +25,7 @@ import { AuthScreen } from "../screens/AuthScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { DetailScreen } from "../screens/DetailScreen";
 import { KitScreen } from "../screens/KitScreen";
+import { PipelineScreen } from "../screens/PipelineScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
 
@@ -49,20 +52,20 @@ function FullscreenLoader({ label }) {
   );
 }
 
-function WorkspaceReadyScreen({ onRetry, onSignOut, debugError }) {
+function WorkspaceReadyScreen({ onRetry, onSignOut }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: theme.bg }}>
       <div style={{ width: "min(620px, 100%)" }}>
         <EmptyState
-          title="La cuenta existe, pero el workspace aun no aparece"
-          description={debugError || "Esto suele pasar cuando todavia no corriste el SQL de Supabase o cuando el trigger de alta no termino de crear profile, workspace y membership."}
+          title="La cuenta existe, pero el workspace aún no aparece"
+          description="Esto suele pasar cuando todavía no corriste el SQL de Supabase o cuando el trigger de alta no terminó de crear profile, workspace y membership."
           actions={
             <>
               <Button variant="primary" onClick={onRetry}>
                 Reintentar
               </Button>
-              <Button variant="secondary" onClick={() => { localStorage.clear(); window.location.reload(); }}>
-                Cerrar sesion
+              <Button variant="secondary" onClick={onSignOut}>
+                Cerrar sesión
               </Button>
             </>
           }
@@ -78,7 +81,7 @@ function sortProspects(list) {
 
 function AppContent() {
   const { hasConfig, session, profile, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { workspace, loading: workspaceLoading, refreshWorkspace, debugError } = useWorkspace();
+  const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [prospects, setProspects] = useState([]);
   const [selectedProspectId, setSelectedProspectId] = useState(null);
@@ -112,27 +115,17 @@ function AppContent() {
 
   async function loadProspects() {
     if (!workspace) {
-      setLoadingProspects(false);
       return;
     }
 
     setLoadingProspects(true);
-    try {
-      const { prospects: rows } = await listProspects(workspace.id);
-      setProspects(sortProspects(rows));
-    } finally {
-      setLoadingProspects(false);
-    }
+    const { prospects: rows } = await listProspects(workspace.id);
+    setProspects(sortProspects(rows));
+    setLoadingProspects(false);
   }
 
   function upsertProspect(nextProspect) {
-    setProspects((current) =>
-      sortProspects(
-        current.some((item) => item.id === nextProspect.id)
-          ? current.map((item) => (item.id === nextProspect.id ? nextProspect : item))
-          : [nextProspect, ...current]
-      )
-    );
+    setProspects((current) => sortProspects(current.some((item) => item.id === nextProspect.id) ? current.map((item) => (item.id === nextProspect.id ? nextProspect : item)) : [nextProspect, ...current]));
     setSelectedProspectId(nextProspect.id);
   }
 
@@ -165,7 +158,7 @@ function AppContent() {
       });
 
       if (!result.session) {
-        setNotice("Cuenta creada. Si no entraste automaticamente, inicia sesion con tu email y password.");
+        setNotice("Cuenta creada. Revisa tu correo para confirmar el acceso y luego inicia sesión.");
       }
     } finally {
       setBusy("");
@@ -179,8 +172,6 @@ function AppContent() {
       upsertProspect(created);
       setView(VIEWS.DETAIL);
       setToast({ tone: "success", message: "Prospecto guardado en Supabase." });
-    } catch (error) {
-      setToast({ tone: "error", message: error.message || "No se pudo guardar el prospecto." });
     } finally {
       setBusy("");
     }
@@ -193,12 +184,8 @@ function AppContent() {
       const nextProspect = await ensureProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
       setView(VIEWS.ANALYSIS);
-      setToast({ tone: "success", message: "Analisis generado correctamente." });
+      setToast({ tone: "success", message: "Análisis persistido correctamente." });
       return nextProspect;
-    } catch (error) {
-      console.error("handleGenerateAnalysis failed", error);
-      setToast({ tone: "error", message: error.message || "No se pudo guardar el analisis." });
-      return null;
     } finally {
       setBusy("");
     }
@@ -290,14 +277,30 @@ function AppContent() {
       const nextProspect = await regenerateProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
       setView(VIEWS.ANALYSIS);
-      setToast({ tone: "success", message: "Analisis regenerado correctamente." });
+      setToast({ tone: "success", message: "Análisis regenerado correctamente." });
       return nextProspect;
-    } catch (error) {
-      console.error("handleRegenerateAnalysis failed", error);
-      setToast({ tone: "error", message: error.message || "No se pudo regenerar el analisis." });
-      return null;
     } finally {
       setBusy("");
+    }
+  }
+
+  async function handleUpdateNextAction({ type, date }) {
+    if (!selectedProspect) return;
+    try {
+      const nextProspect = await updateNextAction(selectedProspect.id, { type, date });
+      upsertProspect(nextProspect);
+      setToast({ tone: "success", message: "Próxima acción guardada." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo guardar la acción." });
+    }
+  }
+
+  async function handleUpdatePipelineStage(prospectId, stage) {
+    try {
+      const nextProspect = await updatePipelineStage(prospectId, stage);
+      upsertProspect(nextProspect);
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo actualizar la etapa." });
     }
   }
 
@@ -334,7 +337,7 @@ function AppContent() {
   }
 
   if (!workspace) {
-    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} debugError={debugError} />;
+    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} />;
   }
 
   const canAccessAssets = canUse(FEATURES.ASSET_EXPORT, workspace);
@@ -377,6 +380,7 @@ function AppContent() {
         onMarkContacted={handleMarkContacted}
         onDelete={() => selectedProspect && handleDeleteProspect(selectedProspect)}
         onUpdateNotes={handleUpdateNotes}
+        onUpdateNextAction={(action) => handleUpdateNextAction(action)}
       />
     );
   }
@@ -404,23 +408,34 @@ function AppContent() {
     );
   }
 
-  if (view === VIEWS.ASSETS) {
-    screen = canAccessAssets ? (
-      <AssetsScreen prospect={selectedProspect} />
-    ) : (
-      <EmptyState
-        title="Tu plan no incluye exportacion"
-        description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter si habilita assets, pero este mensaje protege el flujo."
+  if (view === VIEWS.PIPELINE) {
+    screen = (
+      <PipelineScreen
+        prospects={prospects}
+        onUpdateStage={handleUpdatePipelineStage}
+        onSelectProspect={(prospect) => {
+          setSelectedProspectId(prospect.id);
+          setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+        }}
       />
     );
   }
 
+  if (view === VIEWS.ASSETS) {
+    screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh", background: theme.bg, overflow: "hidden" }}>
-      <Sidebar view={view} setView={navigate} prospect={selectedProspect} profile={profile} workspace={workspace} onSignOut={signOut} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-        {loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}
-      </div>
+      <Sidebar
+        view={view}
+        setView={navigate}
+        prospect={selectedProspect}
+        profile={profile}
+        workspace={workspace}
+        onSignOut={signOut}
+      />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>{loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}</div>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
     </div>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, LikelihoodBar, TemperatureBadge } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatDateLabel, formatRelativeTime } from "../utils/format";
+import { NEXT_ACTION_TYPES } from "../app/constants";
 
 function SocialRow({ icon, label, value }) {
   return (
@@ -28,16 +29,30 @@ function SocialRow({ icon, label, value }) {
   );
 }
 
-export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, busy }) {
+export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, onUpdateNextAction, busy }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [draftNotes, setDraftNotes] = useState("");
+  const [editingAction, setEditingAction] = useState(false);
+  const [draftActionType, setDraftActionType] = useState("");
+  const [draftActionDate, setDraftActionDate] = useState("");
 
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Abre un prospecto desde el dashboard o el listado para revisar su ficha." />;
   }
 
   const scoreColor = prospect.opportunityScore >= 85 ? theme.accent : prospect.opportunityScore >= 70 ? theme.yellow : theme.blue;
+
+  function actionStatus() {
+    if (!prospect.nextActionDate) return null;
+    const today = new Date().toISOString().split("T")[0];
+    if (prospect.nextActionDate < today) return "overdue";
+    if (prospect.nextActionDate === today) return "today";
+    return "upcoming";
+  }
+  const actionSt = actionStatus();
+  const actionColor = actionSt === "overdue" ? theme.red : actionSt === "today" ? theme.yellow : theme.accent;
+  const actionConfig = NEXT_ACTION_TYPES.find(t => t.id === prospect.nextActionType);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -171,6 +186,49 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
             </div>
           </div>
         </div>
+
+        <Card style={{ padding: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próxima acción</div>
+            {editingAction ? (
+              <div style={{ display: "flex", gap: 6 }}>
+                <Button variant="ghost" size="sm" onClick={() => setEditingAction(false)}>Cancelar</Button>
+                <Button variant="primary" size="sm" onClick={() => { onUpdateNextAction({ type: draftActionType, date: draftActionDate }); setEditingAction(false); }}>Guardar</Button>
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => { setDraftActionType(prospect.nextActionType || ""); setDraftActionDate(prospect.nextActionDate || ""); setEditingAction(true); }}>
+                {prospect.nextActionType ? "Editar" : "Programar"}
+              </Button>
+            )}
+          </div>
+          {editingAction ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {NEXT_ACTION_TYPES.map(t => (
+                  <button key={t.id} onClick={() => setDraftActionType(t.id)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${draftActionType === t.id ? theme.accentBorder : theme.border}`, background: draftActionType === t.id ? theme.accentBg : "transparent", color: draftActionType === t.id ? theme.accent : theme.muted, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                    <span>{t.icon}</span>{t.label}
+                  </button>
+                ))}
+              </div>
+              <input type="date" value={draftActionDate} onChange={e => setDraftActionDate(e.target.value)} style={{ background: theme.s3, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "9px 12px", color: theme.text, fontSize: 13, outline: "none" }} />
+            </div>
+          ) : prospect.nextActionType ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${actionColor}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                {actionConfig?.icon || "📋"}
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: theme.text }}>{actionConfig?.label || prospect.nextActionType}</div>
+                <div style={{ fontSize: 12, color: actionColor, fontWeight: 600 }}>
+                  {actionSt === "overdue" ? "⚠ Vencida · " : actionSt === "today" ? "● Hoy · " : ""}
+                  {prospect.nextActionDate}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: theme.dim }}>Sin próxima acción programada. Haz clic en Programar.</div>
+          )}
+        </Card>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
           <Card onClick={() => onOpenView("analysis")}>

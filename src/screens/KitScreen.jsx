@@ -74,6 +74,14 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
       ]
     : [];
 
+  function getCurrentText(id, originalText) {
+    return editedMessages[id] !== undefined ? editedMessages[id] : originalText;
+  }
+
+  function handleEditMessage(id, value) {
+    setEditedMessages((prev) => ({ ...prev, [id]: value }));
+  }
+
   async function startGenerate() {
     clearProgressTimers();
     setError("");
@@ -89,17 +97,10 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         clearInterval(intervalRef.current);
         intervalRef.current = null;
         timeoutRef.current = setTimeout(async () => {
-          const safetyTimeout = setTimeout(() => {
-            setError("La generación tardó demasiado. Intenta de nuevo.");
-            setPhase(prospect.kit ? "done" : "idle");
-            setStep(0);
-          }, 30000);
           try {
             await onGenerateKit();
-            clearTimeout(safetyTimeout);
             setPhase("done");
           } catch (nextError) {
-            clearTimeout(safetyTimeout);
             setError(nextError.message || "No se pudo generar el kit.");
             setPhase(prospect.kit ? "done" : "idle");
             setStep(0);
@@ -107,11 +108,6 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         }, 500);
       }
     }, 700);
-  }
-
-  function getCurrentText(id) {
-    const original = messages.find((m) => m.id === id)?.text ?? "";
-    return editedMessages[id] !== undefined ? editedMessages[id] : original;
   }
 
   async function copyText(id, text) {
@@ -123,6 +119,11 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
       setCopyStatus({ id, tone: "error", message: "No se pudo copiar" });
       setTimeout(() => setCopyStatus(null), 2200);
     }
+  }
+
+  function getWhatsAppUrl(text) {
+    const digits = (prospect.whatsapp || "").replace(/\D/g, "");
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
   }
 
   return (
@@ -233,7 +234,8 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                     borderBottom: tab === item.id ? `2px solid ${theme.accent}` : "2px solid transparent",
                     color: tab === item.id ? theme.accent : theme.muted,
                     fontSize: 13,
-                    fontWeight: tab === item.id ? 600 : 400
+                    fontWeight: tab === item.id ? 600 : 400,
+                    cursor: "pointer"
                   }}
                 >
                   {item.label}
@@ -243,53 +245,67 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
 
             {tab === "messages" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {messages.map((message) => (
-                  <Card key={message.id} style={{ padding: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>{message.icon}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {message.id === "whatsapp" && prospect.whatsapp ? (
-                          <Button
-                            variant="accent"
-                            size="sm"
-                            onClick={() => {
-                              const digits = prospect.whatsapp.replace(/\D/g, "");
-                              window.open(`https://wa.me/${digits}?text=${encodeURIComponent(getCurrentText("whatsapp"))}`, "_blank", "noopener");
-                            }}
-                          >
-                            Abrir en WhatsApp
+                {messages.map((message) => {
+                  const currentText = getCurrentText(message.id, message.text);
+                  return (
+                    <Card key={message.id} style={{ padding: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>{message.icon}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {message.id === "whatsapp" && prospect.whatsapp ? (
+                            <a
+                              href={getWhatsAppUrl(currentText)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                padding: "6px 12px",
+                                borderRadius: 9,
+                                background: "rgba(37,211,102,0.1)",
+                                border: "1px solid rgba(37,211,102,0.3)",
+                                color: "#25d366",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                textDecoration: "none"
+                              }}
+                            >
+                              💬 Abrir en WhatsApp
+                            </a>
+                          ) : null}
+                          <Button variant="secondary" size="sm" onClick={() => copyText(message.id, currentText)}>
+                            {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
                           </Button>
-                        ) : null}
-                        <Button variant="secondary" size="sm" onClick={() => copyText(message.id, getCurrentText(message.id))}>
-                          {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                    <textarea
-                      value={getCurrentText(message.id)}
-                      onChange={(e) => setEditedMessages((prev) => ({ ...prev, [message.id]: e.target.value }))}
-                      rows={6}
-                      style={{
-                        background: theme.s3,
-                        border: `1px solid ${theme.border}`,
-                        borderRadius: 8,
-                        padding: "14px 16px",
-                        fontSize: 13,
-                        color: theme.text,
-                        lineHeight: 1.75,
-                        width: "100%",
-                        resize: "vertical",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        boxSizing: "border-box"
-                      }}
-                    />
-                  </Card>
-                ))}
+                      <textarea
+                        value={currentText}
+                        onChange={(e) => handleEditMessage(message.id, e.target.value)}
+                        style={{
+                          width: "100%",
+                          background: theme.s3,
+                          borderRadius: 8,
+                          padding: "14px 16px",
+                          fontSize: 13,
+                          color: theme.text,
+                          lineHeight: 1.75,
+                          whiteSpace: "pre-wrap",
+                          border: `1px solid ${theme.border}`,
+                          resize: "vertical",
+                          minHeight: 100,
+                          fontFamily: "inherit",
+                          outline: "none",
+                          boxSizing: "border-box"
+                        }}
+                      ></textarea>
+                    </Card>
+                  );
+                })}
               </div>
             ) : null}
 

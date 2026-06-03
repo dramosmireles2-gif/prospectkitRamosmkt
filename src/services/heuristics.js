@@ -1,262 +1,137 @@
 import { clamp } from "../utils/format";
 
-// Catálogo real de servicios RMKT
-const serviceCatalog = {
-  landing: {
-    service: "Landing Express",
-    confidence: 94,
-    revenue: 1500,
-    range: [1500, 1500],
-    unit: " único",
-    icon: "🚀",
-    desc: "1 página enfocada en convertir visitas en clientes. WhatsApp, mapa, galería, móvil. Entrega 5 días."
+const industryPlaybooks = {
+  restaurante: {
+    features: ["Google My Business", "WhatsApp integrado", "Menú digital", "Sistema de reservas", "Meta Ads activos", "Sitio responsivo"],
+    services: ["Landing Page gastronómica", "Google My Business", "Meta Ads locales", "WhatsApp Business"],
+    painPoints: ["reservaciones", "visitas en Google Maps", "respuesta rápida", "menú digital"],
+    multipliers: { web: 1.15, gmb: 1.2, ads: 1.05 }
   },
-  webPro: {
-    service: "Web Profesional",
-    confidence: 91,
-    revenue: 3500,
-    range: [3500, 3500],
-    unit: " único",
-    icon: "🌐",
-    desc: "Sitio multipágina con catálogo, testimonios, dominio + hosting 1 año. Entrega 10 días."
+  automotriz: {
+    features: ["Sitio web", "Google My Business", "WhatsApp Button", "Sistema de citas", "Meta Ads", "Instagram activo"],
+    services: ["Landing + agenda", "Google My Business", "WhatsApp Business", "Meta Ads locales"],
+    painPoints: ["cotizaciones", "citas", "confianza local", "seguimiento de leads"],
+    multipliers: { web: 1.15, gmb: 1.2, social: 0.9 }
   },
-  webEmp: {
-    service: "Web Empresarial",
-    confidence: 85,
-    revenue: 7500,
-    range: [7500, 7500],
-    unit: " único",
-    icon: "🏢",
-    desc: "Plataforma con CMS, blog, SEO técnico, analítica y soporte 2 meses. Entrega 15–20 días."
+  fotografia: {
+    features: ["Sitio portafolio", "Meta Ads activos", "Sistema de reservas", "Tienda online", "Optimización móvil"],
+    services: ["Meta Ads de temporada", "Tienda online", "SEO local", "Optimización web"],
+    painPoints: ["temporadas altas", "portafolio", "reserva inmediata", "upsell digital"],
+    multipliers: { ads: 1.2, ecom: 1.1, web: 1.05 }
   },
-  metaAds: {
-    service: "Meta Ads",
-    confidence: 88,
-    revenue: 2000,
-    range: [2000, 5000],
-    unit: "/mes",
-    icon: "📣",
-    desc: "Campañas Facebook + Instagram con estrategia, creativos, segmentación y reporte mensual."
+  salud: {
+    features: ["Sitio web", "WhatsApp profesional", "Google My Business", "Meta Ads activos", "Landing de sucursales"],
+    services: ["Landing por sucursal", "Google My Business", "WhatsApp Business", "Campañas locales"],
+    painPoints: ["ubicaciones", "confianza", "respuestas rápidas", "captación local"],
+    multipliers: { gmb: 1.15, web: 1.1, social: 0.9 }
   },
-  googleAds: {
-    service: "Google Ads",
-    confidence: 82,
-    revenue: 2500,
-    range: [2500, 6000],
-    unit: "/mes",
-    icon: "🔍",
-    desc: "Campañas de búsqueda y display con keywords, conversiones y reporte mensual."
+  reposteria: {
+    features: ["Catálogo web", "WhatsApp integrado", "Google My Business", "Contenido activo", "Promociones Meta Ads"],
+    services: ["Catálogo web", "WhatsApp Business", "Google My Business", "Contenido para redes"],
+    painPoints: ["pedidos por WhatsApp", "catálogo", "campañas estacionales", "reseñas locales"],
+    multipliers: { social: 1.15, web: 1.1, gmb: 1.05 }
   },
-  chatbot: {
-    service: "Chatbot de captación",
-    confidence: 86,
-    revenue: 500,
-    range: [500, 500],
-    unit: "/mes",
-    icon: "🤖",
-    desc: "Bot WhatsApp o web que responde, califica prospectos y agenda citas 24/7."
+  belleza: {
+    features: ["Sitio web", "Google My Business", "WhatsApp integrado", "Instagram activo", "Sistema de citas", "Meta Ads activos"],
+    services: ["Landing Page", "Google My Business", "WhatsApp Business", "Meta Ads locales"],
+    painPoints: ["citas online", "portafolio visual", "reseñas locales", "captación por redes"],
+    multipliers: { web: 1.1, gmb: 1.15, social: 1.2, ads: 1.05 }
   },
-  automatizaciones: {
-    service: "Automatizaciones",
-    confidence: 80,
-    revenue: 800,
-    range: [500, 1500],
-    unit: "/mes",
-    icon: "⚙️",
-    desc: "Flujos automáticos: seguimiento de leads, recordatorios y notificaciones."
+  fitness: {
+    features: ["Sitio web", "Google My Business", "Instagram activo", "WhatsApp integrado", "Sistema de reservas", "Meta Ads activos"],
+    services: ["Landing Page", "Google My Business", "Meta Ads locales", "Contenido orgánico"],
+    painPoints: ["retención de alumnos", "captación local", "calendario de clases", "comunidad digital"],
+    multipliers: { web: 1.1, gmb: 1.15, social: 1.1, ads: 1.1 }
   },
-  ecommerce: {
-    service: "Ecommerce Completo",
-    confidence: 78,
-    revenue: 8000,
-    range: [8000, 14000],
-    unit: " único",
-    icon: "🛒",
-    desc: "Tienda online con carrito, pagos Stripe/MercadoPago y panel de pedidos e inventario."
+  inmobiliaria: {
+    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "CRM de leads", "Contenido activo"],
+    services: ["Landing Page", "Meta Ads locales", "Google My Business", "WhatsApp Business"],
+    painPoints: ["captación de leads", "seguimiento", "visibilidad de propiedades", "confianza digital"],
+    multipliers: { web: 1.2, ads: 1.25, gmb: 1.1, social: 0.95 }
   },
-  sistemaAdmin: {
-    service: "Sistema Administrativo",
-    confidence: 72,
-    revenue: 8000,
-    range: [8000, 15000],
-    unit: " único",
-    icon: "📊",
-    desc: "Panel de control: inventario, proveedores, órdenes, clientes y reportes."
+  educacion: {
+    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "Landing de cursos"],
+    services: ["Landing Page", "Google My Business", "Meta Ads locales", "WhatsApp Business"],
+    painPoints: ["inscripciones", "visibilidad local", "confianza institucional", "seguimiento de interesados"],
+    multipliers: { web: 1.15, gmb: 1.1, ads: 1.1, social: 1 }
   },
-  crm: {
-    service: "CRM Personalizado",
-    confidence: 74,
-    revenue: 8000,
-    range: [8000, 12000],
-    unit: " único",
-    icon: "🎯",
-    desc: "Pipeline de prospectos y clientes con notas, historial y recordatorios."
-  },
-  dashboard: {
-    service: "Dashboard de Negocio",
-    confidence: 70,
-    revenue: 5000,
-    range: [5000, 8000],
-    unit: " único",
-    icon: "📈",
-    desc: "Panel de métricas en tiempo real: ventas, clientes, inventario y KPIs."
-  },
-  reservaciones: {
-    service: "Sistema de Reservaciones",
-    confidence: 83,
-    revenue: 5000,
-    range: [5000, 8000],
-    unit: " único",
-    icon: "📅",
-    desc: "Agenda digital con disponibilidad, confirmaciones y recordatorios automáticos."
-  },
-  appMovil: {
-    service: "App Móvil",
-    confidence: 60,
-    revenue: 20000,
-    range: [20000, 40000],
-    unit: " único",
-    icon: "📱",
-    desc: "App iOS y Android a la medida, publicada en App Store y Google Play."
-  },
-  mantenimiento: {
-    service: "Plan de Mantenimiento",
-    confidence: 89,
-    revenue: 900,
-    range: [500, 1500],
-    unit: "/mes",
-    icon: "🔧",
-    desc: "Actualizaciones, soporte técnico y mejoras continuas mensuales."
-  },
-  packLanzamiento: {
-    service: "Pack de Lanzamiento Digital",
-    confidence: 87,
-    revenue: 6000,
-    range: [6000, 6000],
-    unit: " único",
-    icon: "🎯",
-    desc: "Web Profesional + Meta Ads 1er mes + Chatbot. Todo para arrancar."
+  default: {
+    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "Contenido activo"],
+    services: ["Landing Page", "Google My Business", "Meta Ads locales", "WhatsApp Business"],
+    painPoints: ["visibilidad", "conversión", "canales digitales", "seguimiento comercial"],
+    multipliers: { web: 1.05, gmb: 1.05, social: 1, ads: 1.05 }
   }
 };
 
-// Paquetes por nicho con ruta de entrada y upsells
-const nichoPaquetes = {
-  iglesia: { starter: 2500, pro: 5500, premium: 10000 },
-  restaurante: { starter: 2500, pro: 6000, premium: 12000 },
-  boutique: { starter: 2500, pro: 7000, premium: 14000 },
-  clinica: { starter: 2500, pro: 6500, premium: 11000 },
-  fitness: { starter: 2500, pro: 6500, premium: 13000 }
-};
-
-const industryPlaybooks = {
-  restaurante: {
-    features: ["Sitio web", "Menú digital", "Sistema de reservas", "Meta Ads activos", "WhatsApp integrado", "Google My Business"],
-    serviceKeys: ["landing", "reservaciones", "metaAds", "chatbot"],
-    painPoints: ["reservaciones perdidas", "menú desactualizado", "visibilidad en Google Maps", "pedidos online"],
-    multipliers: { landing: 1, reservaciones: 1, metaAds: 1, chatbot: 1 },
-    upsell: "Ecommerce de pedidos a domicilio + App del restaurante"
+const serviceCatalog = {
+  web: {
+    service: "Landing Page",
+    confidence: 92,
+    revenue: 3500,
+    range: [3500, 11000],
+    unit: "/mes",
+    icon: "🌐",
+    desc: "Sitio de captación con CTA claros y propuesta de valor enfocada."
   },
-  automotriz: {
-    features: ["Sitio web", "Google My Business", "Sistema de citas", "WhatsApp profesional", "Meta Ads"],
-    serviceKeys: ["webPro", "reservaciones", "metaAds", "chatbot"],
-    painPoints: ["cotizaciones sin respuesta", "citas informales", "confianza local", "seguimiento de leads"],
-    multipliers: { webPro: 1, reservaciones: 1, metaAds: 1, chatbot: 1 },
-    upsell: "CRM + automatizaciones de seguimiento"
+  gmb: {
+    service: "Google My Business",
+    confidence: 96,
+    revenue: 800,
+    range: [800, 2500],
+    unit: " setup",
+    icon: "📍",
+    desc: "Activa búsquedas locales, reseñas y rutas directas a tu negocio."
   },
-  fotografia: {
-    features: ["Sitio portafolio", "Meta Ads activos", "Sistema de reservas", "Tienda online"],
-    serviceKeys: ["webPro", "metaAds", "reservaciones", "ecommerce"],
-    painPoints: ["temporadas altas sin reservas", "portafolio desactualizado", "upsell de productos digitales"],
-    multipliers: { webPro: 1, metaAds: 1, reservaciones: 1 },
-    upsell: "Ecommerce de prints + App para clientes"
+  ads: {
+    service: "Meta Ads locales",
+    confidence: 88,
+    revenue: 2200,
+    range: [2200, 7000],
+    unit: "/mes",
+    icon: "📣",
+    desc: "Campañas de adquisición con segmentación local y objetivo de conversión."
   },
-  salud: {
-    features: ["Sitio web", "Sistema de citas", "WhatsApp profesional", "Google My Business", "Meta Ads"],
-    serviceKeys: ["webPro", "reservaciones", "chatbot", "metaAds"],
-    painPoints: ["agenda llena de llamadas", "citas sin confirmar", "pacientes sin recordatorio", "captación local"],
-    multipliers: { webPro: 1, reservaciones: 1, chatbot: 1 },
-    upsell: "Expediente de pacientes + App móvil"
+  social: {
+    service: "Contenido orgánico",
+    confidence: 79,
+    revenue: 1500,
+    range: [1500, 5000],
+    unit: "/mes",
+    icon: "✨",
+    desc: "Calendario de contenido para sostener presencia y autoridad digital."
   },
-  dental: {
-    features: ["Sitio web", "Sistema de citas", "WhatsApp profesional", "Google My Business", "Meta Ads"],
-    serviceKeys: ["webPro", "reservaciones", "chatbot", "metaAds"],
-    painPoints: ["agenda llena de llamadas", "recordatorios manuales", "captación local de pacientes"],
-    multipliers: { webPro: 1, reservaciones: 1, chatbot: 1 },
-    upsell: "Expediente digital + App para pacientes"
+  whatsapp: {
+    service: "WhatsApp Business",
+    confidence: 84,
+    revenue: 900,
+    range: [900, 3000],
+    unit: "/mes",
+    icon: "💬",
+    desc: "Automatiza respuestas, califica prospectos y acelera seguimiento."
   },
-  reposteria: {
-    features: ["Catálogo web", "WhatsApp integrado", "Google My Business", "Meta Ads", "Pedidos online"],
-    serviceKeys: ["landing", "metaAds", "chatbot", "ecommerce"],
-    painPoints: ["pedidos por DM", "catálogo desorganizado", "campañas estacionales"],
-    multipliers: { landing: 1, metaAds: 1, chatbot: 1 },
-    upsell: "Ecommerce + automatización de pedidos"
-  },
-  belleza: {
-    features: ["Sitio web", "Sistema de citas", "Instagram activo", "Meta Ads activos", "WhatsApp integrado"],
-    serviceKeys: ["landing", "reservaciones", "metaAds", "chatbot"],
-    painPoints: ["citas sin sistema", "portafolio visual disperso", "reseñas locales", "captación por redes"],
-    multipliers: { landing: 1, reservaciones: 1, metaAds: 1 },
-    upsell: "Meta Ads de temporada + CRM de clientes"
-  },
-  gimnasio: {
-    features: ["Sitio web", "Sistema de membresías", "Instagram activo", "Meta Ads", "WhatsApp integrado"],
-    serviceKeys: ["webPro", "sistemaAdmin", "metaAds", "chatbot"],
-    painPoints: ["control manual de membresías", "vencimientos sin aviso", "captación de nuevos miembros"],
-    multipliers: { webPro: 1, sistemaAdmin: 1, metaAds: 1 },
-    upsell: "App de reservas de clases + control de acceso QR"
-  },
-  inmobiliaria: {
-    features: ["Sitio web", "CRM de leads", "Meta Ads activos", "WhatsApp profesional", "Google My Business"],
-    serviceKeys: ["webEmp", "crm", "metaAds", "automatizaciones"],
-    painPoints: ["leads sin seguimiento", "propiedades sin visibilidad", "proceso de ventas manual"],
-    multipliers: { webEmp: 1, crm: 1, metaAds: 1 },
-    upsell: "App de propiedades + automatización de seguimiento"
-  },
-  educacion: {
-    features: ["Sitio web", "Landing de cursos", "Meta Ads activos", "WhatsApp profesional", "Sistema de inscripciones"],
-    serviceKeys: ["webPro", "metaAds", "chatbot", "automatizaciones"],
-    painPoints: ["inscripciones manuales", "prospectos sin seguimiento", "visibilidad de cursos"],
-    multipliers: { webPro: 1, metaAds: 1, chatbot: 1 },
-    upsell: "Plataforma de cursos online + App educativa"
-  },
-  boutique: {
-    features: ["Catálogo online", "Tienda con pagos", "Instagram activo", "Meta Ads", "WhatsApp integrado"],
-    serviceKeys: ["ecommerce", "metaAds", "chatbot", "automatizaciones"],
-    painPoints: ["ventas solo por DM", "inventario sin control", "carritos abandonados"],
-    multipliers: { ecommerce: 1, metaAds: 1, chatbot: 1 },
-    upsell: "App de la tienda + programa de lealtad"
-  },
-  iglesia: {
-    features: ["Sitio web", "Sección de sermones", "Donaciones online", "WhatsApp integrado", "Directorio de ministerios"],
-    serviceKeys: ["webPro", "automatizaciones", "chatbot", "appMovil"],
-    painPoints: ["comunicación dispersa", "donaciones sin sistema", "ausencia digital", "alcance limitado"],
-    multipliers: { webPro: 1, automatizaciones: 1 },
-    upsell: "App de la iglesia + notificaciones push a la congregación"
-  },
-  default: {
-    features: ["Sitio web", "Google My Business", "WhatsApp profesional", "Meta Ads activos", "Sistema de captación"],
-    serviceKeys: ["landing", "metaAds", "chatbot", "automatizaciones"],
-    painPoints: ["visibilidad digital", "captación de clientes", "seguimiento comercial", "automatización"],
-    multipliers: { landing: 1, metaAds: 1, chatbot: 1 },
-    upsell: "Web Profesional + CRM según el volumen del negocio"
+  ecom: {
+    service: "Catálogo / tienda online",
+    confidence: 76,
+    revenue: 1800,
+    range: [1800, 6000],
+    unit: "/mes",
+    icon: "🛒",
+    desc: "Convierte interés orgánico en pedidos digitales con catálogo activo."
   }
 };
 
 function getPlaybook(industry = "") {
-  const key = industry.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const key = industry.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-  if (key.includes("restaur") || key.includes("comida") || key.includes("cocina") || key.includes("taqueria") || key.includes("cafe")) return industryPlaybooks.restaurante;
-  if (key.includes("auto") || key.includes("taller") || key.includes("mecanico") || key.includes("refaccion")) return industryPlaybooks.automotriz;
+  if (key.includes("restaur") || key.includes("comida") || key.includes("cocina")) return industryPlaybooks.restaurante;
+  if (key.includes("auto") || key.includes("taller") || key.includes("mecanico")) return industryPlaybooks.automotriz;
   if (key.includes("foto") || key.includes("video") || key.includes("produc")) return industryPlaybooks.fotografia;
-  if (key.includes("dental") || key.includes("dentist") || key.includes("odontolog")) return industryPlaybooks.dental;
-  if (key.includes("salud") || key.includes("farmac") || key.includes("medic") || key.includes("clinic") || key.includes("hospital")) return industryPlaybooks.salud;
-  if (key.includes("reposter") || key.includes("pastel") || key.includes("panader") || key.includes("dulce")) return industryPlaybooks.reposteria;
-  if (key.includes("belleza") || key.includes("salon") || key.includes("estetica") || key.includes("spa") || key.includes("peluquer") || key.includes("nail") || key.includes("estudio")) return industryPlaybooks.belleza;
-  if (key.includes("fitness") || key.includes("gym") || key.includes("gimnasio") || key.includes("yoga") || key.includes("crossfit") || key.includes("box")) return industryPlaybooks.gimnasio;
-  if (key.includes("inmobil") || key.includes("bienes raices") || key.includes("real estate") || key.includes("propied")) return industryPlaybooks.inmobiliaria;
-  if (key.includes("educa") || key.includes("escuela") || key.includes("academia") || key.includes("curso") || key.includes("colegio")) return industryPlaybooks.educacion;
-  if (key.includes("boutique") || key.includes("moda") || key.includes("ropa") || key.includes("tienda") || key.includes("fashion")) return industryPlaybooks.boutique;
-  if (key.includes("iglesia") || key.includes("iglesia") || key.includes("templo") || key.includes("ministerio") || key.includes("parroquia")) return industryPlaybooks.iglesia;
+  if (key.includes("salud") || key.includes("farmac") || key.includes("medic") || key.includes("dental") || key.includes("clinic")) return industryPlaybooks.salud;
+  if (key.includes("reposter") || key.includes("pastel") || key.includes("panader")) return industryPlaybooks.reposteria;
+  if (key.includes("belleza") || key.includes("salon") || key.includes("estetica") || key.includes("spa") || key.includes("peluquer")) return industryPlaybooks.belleza;
+  if (key.includes("fitness") || key.includes("gym") || key.includes("gimnasio") || key.includes("yoga") || key.includes("crossfit")) return industryPlaybooks.fitness;
+  if (key.includes("inmobil") || key.includes("bienes raices") || key.includes("real estate")) return industryPlaybooks.inmobiliaria;
+  if (key.includes("educa") || key.includes("escuela") || key.includes("academia") || key.includes("curso")) return industryPlaybooks.educacion;
   return industryPlaybooks.default;
 }
 
@@ -306,33 +181,31 @@ function buildMissingFeatures(prospect, playbook) {
   const rows = [];
   const checks = {
     "Sitio web": Boolean(prospect.website),
+    "Sitio responsivo": Boolean(prospect.website),
     "Sitio portafolio": Boolean(prospect.website),
-    "Catálogo online": Boolean(prospect.website),
     "Catálogo web": Boolean(prospect.website),
-    "Landing de cursos": Boolean(prospect.website),
+    "Landing de sucursales": Boolean(prospect.website),
     "Google My Business": false,
     "WhatsApp integrado": Boolean(prospect.whatsapp),
     "WhatsApp profesional": Boolean(prospect.whatsapp),
+    "WhatsApp Button": Boolean(prospect.whatsapp),
     "Menú digital": Boolean(prospect.website),
-    "Sistema de citas": false,
     "Sistema de reservas": false,
-    "Sistema de membresías": false,
-    "Sistema de inscripciones": false,
+    "Sistema de citas": false,
     "Meta Ads activos": false,
     "Meta Ads": false,
     "Instagram activo": Boolean(prospect.instagram),
-    "Donaciones online": false,
-    "Tienda con pagos": false,
-    "CRM de leads": false,
-    "Directorio de ministerios": false,
-    "Sección de sermones": false
+    "Contenido activo": Boolean(prospect.instagram || prospect.facebook),
+    "Promociones Meta Ads": false,
+    "Tienda online": false,
+    "Optimización móvil": Boolean(prospect.website)
   };
 
   for (const feature of playbook.features) {
     if (!checks[feature]) {
       rows.push({
         name: feature,
-        critical: feature.includes("Sitio") || feature.includes("WhatsApp") || feature.includes("Sistema") || feature.includes("Tienda")
+        critical: feature.includes("Sitio") || feature.includes("WhatsApp") || feature.includes("Google")
       });
     }
   }
@@ -341,8 +214,38 @@ function buildMissingFeatures(prospect, playbook) {
 }
 
 function topServiceKeys(prospect, missingFeatures, playbook) {
-  const keys = [...playbook.serviceKeys];
-  if (!prospect.website && !keys.includes("landing")) keys.unshift("landing");
+  const keys = [];
+  const names = missingFeatures.map((item) => item.name);
+
+  if (names.some((item) => item.includes("Sitio") || item.includes("Catálogo") || item.includes("Landing"))) {
+    keys.push("web");
+  }
+  if (names.some((item) => item.includes("Google"))) {
+    keys.push("gmb");
+  }
+  if (names.some((item) => item.includes("WhatsApp"))) {
+    keys.push("whatsapp");
+  }
+  if (names.some((item) => item.includes("Meta Ads"))) {
+    keys.push("ads");
+  }
+  if (names.some((item) => item.includes("Contenido") || item.includes("Instagram"))) {
+    keys.push("social");
+  }
+  if (names.some((item) => item.includes("Tienda") || item.includes("Catálogo"))) {
+    keys.push("ecom");
+  }
+
+  for (const preferred of playbook.services) {
+    if (preferred.includes("Google") && !keys.includes("gmb")) keys.push("gmb");
+    if ((preferred.includes("Landing") || preferred.includes("web") || preferred.includes("Catálogo")) && !keys.includes("web")) keys.push("web");
+    if (preferred.includes("WhatsApp") && !keys.includes("whatsapp")) keys.push("whatsapp");
+    if ((preferred.includes("Ads") || preferred.includes("Campañas")) && !keys.includes("ads")) keys.push("ads");
+    if (preferred.includes("Contenido") && !keys.includes("social")) keys.push("social");
+    if (preferred.includes("Tienda") && !keys.includes("ecom")) keys.push("ecom");
+  }
+
+  if (!prospect.website && !keys.includes("web")) keys.unshift("web");
   return [...new Set(keys)].slice(0, 4);
 }
 
@@ -360,30 +263,20 @@ export function estimateOpportunityScore(prospect) {
   return clamp(Math.round(100 - averageMaturity + missingIntensity), 40, 96);
 }
 
-// Sales Likelihood Score: probabilidad de que ESTE prospecto compre a RMKT.
-// A diferencia del Opportunity Score (que mide el gap digital),
-// este mide la propensión a invertir en marketing digital.
 export function estimateSalesLikelihoodScore(prospect) {
-  let score = 30; // base
-
-  // Señales de inversión digital previa
+  let score = 30;
   if (prospect.website) score += 20;
   if (prospect.instagram) score += 10;
   if (prospect.facebook) score += 8;
   if (prospect.whatsapp) score += 12;
-
-  // Tener múltiples canales = ya invierte en digital = más probable que pague
   const channelCount = [prospect.website, prospect.instagram, prospect.facebook, prospect.whatsapp].filter(Boolean).length;
   if (channelCount >= 3) score += 10;
   if (channelCount === 4) score += 5;
-
-  // Notas con señales positivas
   const notes = (prospect.notes || "").toLowerCase();
-  const hotWords = ["urgente", "necesito", "quiero", "presupuesto", "cuanto", "precio", "crecer", "ventas", "clientes", "pronto"];
-  const coldWords = ["no tengo", "sin presupuesto", "no puedo", "gratis", "barato", "no interesa"];
+  const hotWords = ["urgente","necesito","quiero","presupuesto","cuanto","precio","crecer","ventas","clientes","pronto"];
+  const coldWords = ["no tengo","sin presupuesto","no puedo","gratis","barato","no interesa"];
   hotWords.forEach(w => { if (notes.includes(w)) score += 5; });
   coldWords.forEach(w => { if (notes.includes(w)) score -= 8; });
-
   return clamp(score, 5, 98);
 }
 
@@ -395,10 +288,10 @@ export function calcLeadTemperature(salesLikelihoodScore) {
 }
 
 export const TEMPERATURE_CONFIG = {
-  urgente:  { label: "Urgente",  color: "#ff4455", bg: "rgba(255,68,85,0.15)",    dot: "🔴" },
-  caliente: { label: "Caliente", color: "#ff7744", bg: "rgba(255,119,68,0.15)",   dot: "🟠" },
-  tibio:    { label: "Tibio",    color: "#ffbb44", bg: "rgba(255,187,68,0.15)",   dot: "🟡" },
-  frio:     { label: "Frío",     color: "#4a9eff", bg: "rgba(74,158,255,0.15)",   dot: "🔵" }
+  urgente:  { label: "Urgente",  color: "#ff4455", bg: "rgba(255,68,85,0.15)",  dot: "🔴" },
+  caliente: { label: "Caliente", color: "#ff7744", bg: "rgba(255,119,68,0.15)", dot: "🟠" },
+  tibio:    { label: "Tibio",    color: "#ffbb44", bg: "rgba(255,187,68,0.15)", dot: "🟡" },
+  frio:     { label: "Frío",     color: "#4a9eff", bg: "rgba(74,158,255,0.15)", dot: "🔵" }
 };
 
 export const LIKELIHOOD_CONFIG = {
@@ -418,84 +311,19 @@ export const LIKELIHOOD_CONFIG = {
   }
 };
 
-export async function generateProspectAnalysisAI(prospect) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 26000);
-
-  try {
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prospect }),
-      signal: controller.signal
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `API error ${res.status}`);
-    }
-
-    const { analysis } = await res.json();
-    if (!analysis || typeof analysis !== "object") {
-      throw new Error("La API de análisis no devolvió un análisis válido.");
-    }
-    return analysis;
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("Timeout: Claude tardó demasiado, se usará análisis local.");
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-export async function generateProspectKitAI(prospect, analysis) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 26000);
-
-  try {
-    const res = await fetch("/api/generate-kit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prospect, analysis }),
-      signal: controller.signal
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `API error ${res.status}`);
-    }
-
-    const { kit } = await res.json();
-    if (!kit || typeof kit !== "object") {
-      throw new Error("La API de kit no devolvió un kit válido.");
-    }
-    return kit;
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("Timeout: Claude tardó demasiado, se usará kit local.");
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 export function generateProspectAnalysis(prospect) {
   const playbook = getPlaybook(prospect.industry);
   const scoreBreakdown = buildScoreBreakdown(prospect);
   const opportunityScore = estimateOpportunityScore(prospect);
-  const salesLikelihoodScore = estimateSalesLikelihoodScore(prospect);
-  const leadTemperature = calcLeadTemperature(salesLikelihoodScore);
   const missingFeatures = buildMissingFeatures(prospect, playbook);
   const serviceKeys = topServiceKeys(prospect, missingFeatures, playbook);
   const recommendedServices = serviceKeys.map((key, index) => {
     const base = serviceCatalog[key];
+    const multiplier = Object.values(playbook.multipliers)[index] || 1;
     return {
       service: base.service,
       confidence: clamp(base.confidence - index * 3, 68, 99),
-      revenue: base.revenue,
+      revenue: Math.round(base.revenue * multiplier),
       unit: base.unit,
       icon: base.icon,
       desc: base.desc
@@ -506,7 +334,7 @@ export function generateProspectAnalysis(prospect) {
     const service = recommendedServices[index];
     const priority = index === 0 ? "urgente" : index === 1 ? "alta" : "media";
     return {
-      type: key,
+      type: key === "whatsapp" ? "social" : key,
       title: service.service,
       desc: `${service.desc} Impacta ${playbook.painPoints[index % playbook.painPoints.length]}.`,
       priority,
@@ -531,7 +359,7 @@ export function generateProspectAnalysis(prospect) {
 
   const revenueMin = recommendedServices.reduce((sum, item) => sum + item.revenue, 0);
   const revenueMax = recommendedServices.reduce(
-    (sum, item, index) => sum + Math.round(item.revenue * (2.2 + index * 0.2)),
+    (sum, item, index) => sum + Math.round(item.revenue * (2.4 + index * 0.2)),
     0
   );
 
@@ -549,8 +377,6 @@ export function generateProspectAnalysis(prospect) {
       max: revenueMax
     },
     weaknesses: [...new Set(weaknesses)].slice(0, 6),
-    salesLikelihoodScore,
-    leadTemperature,
     source: "heuristic"
   };
 }
@@ -568,7 +394,7 @@ export function generateProspectKit(prospect, analysis) {
       facebook: `Hola equipo de ${prospect.name} 👋 Soy Carlos de RamosMKT. Detecté varias mejoras de captación digital, empezando por ${topService.toLowerCase()}. ¿Les interesa que les comparta un análisis breve y práctico?`,
       email: {
         subject: `Diagnóstico digital para ${prospect.name}`,
-        body: `Hola equipo de ${prospect.name},\n\nRevisé su presencia digital y encontré una oportunidad fuerte para crecer con ${topService.toLowerCase()}.\n\nHallazgos principales:\n${weaknessList.map((item) => `• ${item}`).join("\n")}\n\nSi quieren, les comparto un plan concreto con prioridades, estimado de impacto y siguientes pasos.\n\nCarlos Ramos\nRamosMKT · ramosmkt.lat\nWhatsApp: +52 814 807 8309`
+        body: `Hola equipo de ${prospect.name},\n\nRevisé su presencia digital y encontré una oportunidad fuerte para crecer con ${topService.toLowerCase()}.\n\nHallazgos principales:\n${weaknessList.map((item) => `• ${item}`).join("\n")}\n\nSi quieren, les comparto un plan concreto con prioridades, estimado de impacto y siguientes pasos.\n\nCarlos Ramos\nRamosMKT`
       }
     },
     proposalSnapshot: {

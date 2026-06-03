@@ -1,7 +1,8 @@
 import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
-import { generateProspectAnalysis, generateProspectAnalysisAI, generateProspectKit, generateProspectKitAI, estimateOpportunityScore, estimateSalesLikelihoodScore, calcLeadTemperature } from "./heuristics";
+import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore, estimateSalesLikelihoodScore, calcLeadTemperature } from "./heuristics";
 import { supabase } from "./supabase";
+import { STAGE_CADENCE } from "../app/constants";
 
 function normalizeAnalysis(row) {
   if (!row) {
@@ -25,8 +26,6 @@ function normalizeAnalysis(row) {
       max: row.revenue_max || 0
     },
     weaknesses: row.weaknesses || [],
-    salesLikelihoodScore: row.sales_likelihood_score || 0,
-    leadTemperature: row.lead_temperature || "frio",
     source: row.source
   };
 }
@@ -63,6 +62,9 @@ function normalizeProspect(row) {
     opportunityScore: row.opportunity_score || 0,
     salesLikelihoodScore: row.sales_likelihood_score || 0,
     leadTemperature: row.lead_temperature || "frio",
+    pipelineStage: row.pipeline_stage || "lead",
+    nextActionType: row.next_action_type || null,
+    nextActionDate: row.next_action_date || null,
     lastActivityAt: row.last_activity_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -120,6 +122,7 @@ export async function createProspect(workspaceId, input) {
     opportunity_score: opportunityScore,
     sales_likelihood_score: salesLikelihoodScore,
     lead_temperature: leadTemperature,
+    pipeline_stage: "lead",
     last_activity_at: new Date().toISOString()
   };
 
@@ -144,6 +147,34 @@ export async function updateProspect(input) {
   }
 
   return fetchProspectById(id);
+}
+
+export async function updatePipelineStage(prospectId, stage) {
+  const cadence = STAGE_CADENCE[stage];
+  const nextDate = cadence
+    ? new Date(Date.now() + cadence.days * 86400000).toISOString().split("T")[0]
+    : null;
+  const { error } = await supabase
+    .from("prospects")
+    .update({
+      pipeline_stage: stage,
+      next_action_type: cadence ? cadence.type : null,
+      next_action_date: nextDate,
+      last_activity_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", prospectId);
+  if (error) throw error;
+  return fetchProspectById(prospectId);
+}
+
+export async function updateNextAction(prospectId, { type, date }) {
+  const { error } = await supabase
+    .from("prospects")
+    .update({ next_action_type: type || null, next_action_date: date || null, updated_at: new Date().toISOString() })
+    .eq("id", prospectId);
+  if (error) throw error;
+  return fetchProspectById(prospectId);
 }
 
 export async function deleteProspect(prospectId) {
@@ -173,8 +204,6 @@ export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }
       revenue_min: analysis.revenue.min,
       revenue_max: analysis.revenue.max,
       weaknesses: analysis.weaknesses,
-      sales_likelihood_score: analysis.salesLikelihoodScore || 0,
-      lead_temperature: analysis.leadTemperature || "frio",
       source: analysis.source,
       updated_at: new Date().toISOString()
     },
@@ -189,8 +218,6 @@ export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }
     id: prospectId,
     status: "analyzed",
     opportunity_score: analysis.opportunityScore,
-    sales_likelihood_score: analysis.salesLikelihoodScore || 0,
-    lead_temperature: analysis.leadTemperature || "frio",
     last_activity_at: new Date().toISOString()
   });
 }
@@ -223,60 +250,21 @@ export async function ensureProspectAnalysis(workspaceId, prospect) {
     return prospect;
   }
 
-  let analysis;
-  let usedFallback = false;
-
-  try {
-    analysis = await generateProspectAnalysisAI(prospect);
-  } catch (error) {
-    console.warn("Claude analysis unavailable; using heuristic fallback", {
-      prospectId: prospect.id,
-      message: error.message
-    });
-    analysis = generateProspectAnalysis(prospect);
-    usedFallback = true;
-  }
-
-  try {
-    return await saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
-  } catch (error) {
-    console.error("Failed to save prospect analysis", {
-      prospectId: prospect.id,
-      workspaceId,
-      source: analysis?.source,
-      usedFallback,
-      message: error.message
-    });
-    throw error;
-  }
+  const analysis = generateProspectAnalysis(prospect);
+  return saveProspectAnalysis({
+    workspaceId,
+    prospectId: prospect.id,
+    analysis
+  });
 }
 
 export async function regenerateProspectAnalysis(workspaceId, prospect) {
-  let analysis;
-  let usedFallback = false;
-
-  try {
-    analysis = await generateProspectAnalysisAI(prospect);
-  } catch (error) {
-    console.warn("Claude analysis unavailable; using heuristic fallback", {
-      prospectId: prospect.id,
-      message: error.message
-    });
-    analysis = generateProspectAnalysis(prospect);
-    usedFallback = true;
-  }
-
-  try {
-    return await saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
-  } catch (error) {
-    console.error("Failed to save regenerated analysis", {
-      prospectId: prospect.id,
-      source: analysis?.source,
-      usedFallback,
-      message: error.message
-    });
-    throw error;
-  }
+  const analysis = generateProspectAnalysis(prospect);
+  return saveProspectAnalysis({
+    workspaceId,
+    prospectId: prospect.id,
+    analysis
+  });
 }
 
 export async function ensureProspectKit(workspaceId, prospect) {
@@ -285,29 +273,22 @@ export async function ensureProspectKit(workspaceId, prospect) {
     return analyzedProspect;
   }
 
-  let kit;
-  try {
-    kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
-  } catch (error) {
-    console.warn("Claude kit unavailable; using heuristic fallback", { message: error.message });
-    kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
-  }
-
-  return saveProspectKit({ workspaceId, prospectId: analyzedProspect.id, kit });
+  const kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
+  return saveProspectKit({
+    workspaceId,
+    prospectId: analyzedProspect.id,
+    kit
+  });
 }
 
 export async function regenerateProspectKit(workspaceId, prospect) {
   const analyzedProspect = prospect.analysis ? prospect : await ensureProspectAnalysis(workspaceId, prospect);
-
-  let kit;
-  try {
-    kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
-  } catch (error) {
-    console.warn("Claude kit unavailable; using heuristic fallback", { message: error.message });
-    kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
-  }
-
-  return saveProspectKit({ workspaceId, prospectId: analyzedProspect.id, kit });
+  const kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
+  return saveProspectKit({
+    workspaceId,
+    prospectId: analyzedProspect.id,
+    kit
+  });
 }
 
 export async function getDashboardMetrics(workspaceId) {
@@ -326,7 +307,7 @@ export function buildDashboardMetrics(prospects) {
   const recommendations = rankedProspects.slice(0, 4).map((prospect) => ({
     id: prospect.id,
     label: prospect.analysis ? `Pulir ${prospect.name}` : `Analizar ${prospect.name}`,
-    desc: `${prospect.industry} - score ${prospect.opportunityScore}`,
+    desc: `${prospect.industry} · score ${prospect.opportunityScore}`,
     targetView: prospect.analysis ? "analysis" : "detail"
   }));
 
