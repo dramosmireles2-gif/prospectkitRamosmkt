@@ -32,6 +32,46 @@ const STATUS_CONFIG = {
   rechazada:   { label: "Rechazada",      color: theme.red,    bg: "rgba(255,68,85,0.12)"   }
 };
 
+// Map analysis recommended service names to catalog IDs
+const SERVICE_KEYWORDS = {
+  web:      ["landing", "sitio", "página", "web"],
+  ecom:     ["tienda", "catálogo", "ecommerce", "e-commerce"],
+  gmb:      ["google", "maps", "gmb", "business"],
+  ads:      ["ads", "meta", "facebook", "pauta", "publicidad"],
+  social:   ["social", "orgánico", "contenido", "redes"],
+  whatsapp: ["whatsapp", "whats"],
+  seo:      ["seo", "posicionamiento", "búsqueda"],
+  email:    ["email", "correo", "newsletter"]
+};
+
+function matchCatalogItem(serviceLabel) {
+  const lower = serviceLabel.toLowerCase();
+  for (const [id, keywords] of Object.entries(SERVICE_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) {
+      return CATALOG.find((c) => c.id === id) || null;
+    }
+  }
+  return null;
+}
+
+function draftFromAnalysis(analysis) {
+  const services = [];
+  for (const rec of analysis.recommendedServices || []) {
+    const cat = matchCatalogItem(rec.service);
+    if (!cat || services.find((s) => s.id === cat.id)) continue;
+    services.push({
+      id: cat.id,
+      service: cat.service,
+      icon: cat.icon,
+      type: cat.type,
+      originalPrice: cat.price,
+      negotiatedPrice: cat.price,
+      ...(cat.type === "setup+mensual" ? { originalSetupPrice: cat.setupPrice, negotiatedSetupPrice: cat.setupPrice } : {})
+    });
+  }
+  return { status: "borrador", services, notes: "", sent_at: "" };
+}
+
 function emptyDraft() {
   return { status: "borrador", services: [], notes: "", sent_at: "" };
 }
@@ -144,7 +184,8 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
   const latest = sorted[0] || null;
 
   const [activeVersionId, setActiveVersionId] = useState(latest?.id || null);
-  const [draft, setDraft] = useState(latest ? draftFromProposal(latest) : emptyDraft());
+  const initialDraft = latest ? draftFromProposal(latest) : (prospect?.analysis ? draftFromAnalysis(prospect.analysis) : emptyDraft());
+  const [draft, setDraft] = useState(initialDraft);
   const [addingService, setAddingService] = useState(false);
 
   if (!prospect) {
@@ -239,7 +280,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
         <div style={{ borderRight: `1px solid ${theme.border}`, padding: 14, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Versiones</div>
           <div
-            onClick={() => { setActiveVersionId(null); setDraft(emptyDraft()); }}
+            onClick={() => { setActiveVersionId(null); setDraft(prospect?.analysis ? draftFromAnalysis(prospect.analysis) : emptyDraft()); }}
             style={{ padding: "10px 14px", borderRadius: 9, cursor: "pointer", background: activeVersionId === null ? theme.accentBg : "rgba(255,255,255,0.03)", border: `1px solid ${activeVersionId === null ? theme.accentBorder : theme.border}` }}
           >
             <div style={{ fontSize: 12, fontWeight: 700, color: activeVersionId === null ? theme.accent : theme.text }}>+ Nueva</div>
