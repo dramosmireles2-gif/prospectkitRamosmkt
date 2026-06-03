@@ -421,7 +421,7 @@ export function Field({ label, value, onChange, placeholder, textarea, rows = 4,
   );
 }
 
-export function ModalFrame({ title, description, onClose, children }) {
+export function ModalFrame({ title, description, onClose, children, style }) {
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "Escape") onClose();
@@ -459,7 +459,8 @@ export function ModalFrame({ title, description, onClose, children }) {
           width: 520,
           maxHeight: "90vh",
           overflowY: "auto",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.7)"
+          boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
+          ...style
         }}
       >
         <div

@@ -2,6 +2,24 @@ import { Button, Card, EmptyState, ScoreRing, Tag } from "../components/Primitiv
 import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 
+function printAnalysis() {
+  const styleId = "prospect-print-style";
+  document.getElementById(styleId)?.remove();
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    @media print {
+      body > * { display: none !important; }
+      #analysis-print-target { display: block !important; position: fixed; inset: 0; padding: 24px; background: #ffffff !important; font-family: 'DM Sans', system-ui, sans-serif; overflow: visible !important; }
+      #analysis-print-target * { color: #111111 !important; background: transparent !important; border-color: #cccccc !important; box-shadow: none !important; }
+      .no-print { display: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(() => style.remove(), 2000);
+}
+
 export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets }) {
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Necesitas abrir un prospecto para revisar o generar análisis." />;
@@ -47,6 +65,7 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div
+        className="no-print"
         style={{
           height: 58,
           borderBottom: `1px solid ${theme.border}`,
@@ -61,18 +80,21 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Análisis heurístico</div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onRegenerateAnalysis}>
+        <Button variant="ghost" size="sm" onClick={onRegenerateAnalysis} className="no-print">
           Regenerar
         </Button>
-        <Button variant="secondary" size="sm" onClick={onOpenAssets}>
+        <Button variant="ghost" size="sm" onClick={printAnalysis} className="no-print">
+          PDF
+        </Button>
+        <Button variant="secondary" size="sm" onClick={onOpenAssets} className="no-print">
           Crear assets
         </Button>
-        <Button variant="primary" size="sm" onClick={onGenerateKit}>
+        <Button variant="primary" size="sm" onClick={onGenerateKit} className="no-print">
           Generar kit
         </Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+      <div id="analysis-print-target" style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 14 }}>
           <Card style={{ padding: 22, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
             <ScoreRing value={analysis.opportunityScore} size={90} />

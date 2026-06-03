@@ -32,6 +32,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
   const [tab, setTab] = useState("messages");
   const [copyStatus, setCopyStatus] = useState(null);
   const [error, setError] = useState("");
+  const [editedMessages, setEditedMessages] = useState({});
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
@@ -53,6 +54,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
     setTab("messages");
     setCopyStatus(null);
     setError("");
+    setEditedMessages({});
     return () => clearProgressTimers();
   }, [prospect?.id, prospect?.kit?.id]);
 
@@ -98,6 +100,11 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         }, 500);
       }
     }, 700);
+  }
+
+  function getCurrentText(id) {
+    const original = messages.find((m) => m.id === id)?.text ?? "";
+    return editedMessages[id] !== undefined ? editedMessages[id] : original;
   }
 
   async function copyText(id, text) {
@@ -237,13 +244,43 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                         <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
                       </div>
-                      <Button variant="secondary" size="sm" onClick={() => copyText(message.id, message.text)}>
-                        {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
-                      </Button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {message.id === "whatsapp" && prospect.whatsapp ? (
+                          <Button
+                            variant="accent"
+                            size="sm"
+                            onClick={() => {
+                              const digits = prospect.whatsapp.replace(/\D/g, "");
+                              window.open(`https://wa.me/${digits}?text=${encodeURIComponent(getCurrentText("whatsapp"))}`, "_blank", "noopener");
+                            }}
+                          >
+                            Abrir en WhatsApp
+                          </Button>
+                        ) : null}
+                        <Button variant="secondary" size="sm" onClick={() => copyText(message.id, getCurrentText(message.id))}>
+                          {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
+                        </Button>
+                      </div>
                     </div>
-                    <div style={{ background: theme.s3, borderRadius: 8, padding: "14px 16px", fontSize: 13, color: theme.text, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
-                      {message.text}
-                    </div>
+                    <textarea
+                      value={getCurrentText(message.id)}
+                      onChange={(e) => setEditedMessages((prev) => ({ ...prev, [message.id]: e.target.value }))}
+                      rows={6}
+                      style={{
+                        background: theme.s3,
+                        border: `1px solid ${theme.border}`,
+                        borderRadius: 8,
+                        padding: "14px 16px",
+                        fontSize: 13,
+                        color: theme.text,
+                        lineHeight: 1.75,
+                        width: "100%",
+                        resize: "vertical",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        boxSizing: "border-box"
+                      }}
+                    />
                   </Card>
                 ))}
               </div>
