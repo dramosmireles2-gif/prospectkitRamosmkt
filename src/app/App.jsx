@@ -16,9 +16,24 @@ import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
 
 function FullscreenLoader({ label }) {
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: theme.bg }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: theme.bg, gap: 12 }}>
       <div style={{ fontSize: 14, color: theme.muted }}>{label}</div>
+      {slow ? (
+        <div style={{ fontSize: 12, color: theme.red, maxWidth: 360, textAlign: "center", lineHeight: 1.6 }}>
+          Está tardando más de lo normal. Verifica que{" "}
+          <code style={{ color: theme.yellow }}>VITE_SUPABASE_URL</code> y{" "}
+          <code style={{ color: theme.yellow }}>VITE_SUPABASE_ANON_KEY</code>{" "}
+          estén correctas en Vercel y que hayas hecho redeploy.
+        </div>
+      ) : null}
     </div>
   );
 }
