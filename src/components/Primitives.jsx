@@ -273,7 +273,7 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
   );
 }
 
-export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut }) {
+export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false }) {
   const navigation = [
     { id: "dashboard", label: "Dashboard",     icon: "▦" },
     { id: "prospects", label: "Prospectos",    icon: "◉" },
@@ -293,6 +293,50 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
         { id: "proposal", label: "Propuesta", icon: "📄" }
       ]
     : [];
+
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          height: 56,
+          width: "100%",
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "row",
+          background: theme.bg,
+          borderTop: `1px solid ${theme.border}`,
+          zIndex: 100
+        }}
+      >
+        {navigation.map((item) => {
+          const active = view === item.id;
+          return (
+            <div
+              key={item.id}
+              onClick={() => setView(item.id)}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+                cursor: "pointer",
+                color: active ? theme.accent : theme.dim,
+                background: active ? theme.accentBg : "transparent",
+                transition: "all 100ms ease"
+              }}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1 }}>
+                {item.id === "attack" ? "Ataque" : item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div

@@ -2,6 +2,7 @@ import { EmptyState, Button } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCompactCurrency } from "../utils/format";
 import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;

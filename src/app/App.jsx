@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { Sidebar, Toast, EmptyState, Button } from "../components/Primitives";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "../contexts/WorkspaceContext";
@@ -378,6 +379,7 @@ function AppContent() {
     }
   }
 
+  const isMobile = useIsMobile();
   const dismissToast = useCallback(() => setToast(null), []);
 
   if (!hasConfig) {
@@ -542,9 +544,30 @@ function AppContent() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: theme.bg, overflow: "hidden" }}>
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", minWidth: 0 }}>
+          {loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}
+        </div>
+        <Sidebar
+          isMobile={true}
+          view={view}
+          setView={navigate}
+          prospect={selectedProspect}
+          profile={profile}
+          workspace={workspace}
+          onSignOut={signOut}
+        />
+        {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh", background: theme.bg, overflow: "hidden" }}>
       <Sidebar
+        isMobile={false}
         view={view}
         setView={navigate}
         prospect={selectedProspect}

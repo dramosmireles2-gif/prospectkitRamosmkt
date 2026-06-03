@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0f"/>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <defs>
+    <radialGradient id="g" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#00ff8822"/>
+      <stop offset="100%" stop-color="#0a0a0f00"/>
+    </radialGradient>
+  </defs>
+  <rect x="148" y="148" width="128" height="128" rx="26" fill="#00ff88"/>
+  <text x="212" y="235" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="80" fill="#000">R</text>
+  <text x="256" y="390" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="42" fill="#ffffff99">ProspectKit</text>
+</svg>
