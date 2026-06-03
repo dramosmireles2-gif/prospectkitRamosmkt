@@ -42,12 +42,30 @@ export async function getCurrentWorkspace(userId, attempt = 0) {
     return getCurrentWorkspace(userId, attempt + 1);
   }
 
-  if (!data?.workspaces) {
+  if (!data) {
     return null;
   }
 
+  // If the JOIN returned the workspace, use it directly
+  if (data.workspaces) {
+    return {
+      workspace: normalizeWorkspace(data.workspaces),
+      membership: normalizeMember(data)
+    };
+  }
+
+  // Fallback: RLS may have blocked the JOIN — fetch workspace separately
+  const { data: wsData, error: wsError } = await supabase
+    .from("workspaces")
+    .select("*")
+    .eq("id", data.workspace_id)
+    .maybeSingle();
+
+  if (wsError) throw wsError;
+  if (!wsData) return null;
+
   return {
-    workspace: normalizeWorkspace(data.workspaces),
+    workspace: normalizeWorkspace(wsData),
     membership: normalizeMember(data)
   };
 }
