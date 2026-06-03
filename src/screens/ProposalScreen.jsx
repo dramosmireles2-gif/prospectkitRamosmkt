@@ -3,16 +3,26 @@ import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 
+// type: "unico" | "mensual" | "setup+mensual"
+// price = pago único o mensual; setupPrice = cargo inicial cuando type === "setup+mensual"
 const CATALOG = [
-  { id: "web",       service: "Landing Page",            icon: "🌐", price: 3500 },
-  { id: "gmb",       service: "Google My Business",       icon: "📍", price: 800  },
-  { id: "ads",       service: "Meta Ads locales",         icon: "📣", price: 2200 },
-  { id: "social",    service: "Contenido orgánico",       icon: "✨", price: 1500 },
-  { id: "whatsapp",  service: "WhatsApp Business",        icon: "💬", price: 900  },
-  { id: "ecom",      service: "Catálogo / tienda online", icon: "🛒", price: 1800 },
-  { id: "seo",       service: "SEO local",                icon: "🔍", price: 1200 },
-  { id: "email",     service: "Email marketing",          icon: "✉️", price: 1000 }
+  { id: "web",      service: "Landing Page / Sitio web",   icon: "🌐", type: "unico",         price: 3500 },
+  { id: "ecom",     service: "Catálogo / Tienda online",   icon: "🛒", type: "setup+mensual", price: 800,  setupPrice: 4500 },
+  { id: "gmb",      service: "Google My Business",         icon: "📍", type: "mensual",        price: 800  },
+  { id: "ads",      service: "Meta Ads locales",           icon: "📣", type: "mensual",        price: 2200 },
+  { id: "social",   service: "Contenido orgánico",         icon: "✨", type: "mensual",        price: 1500 },
+  { id: "whatsapp", service: "WhatsApp Business",          icon: "💬", type: "mensual",        price: 900  },
+  { id: "seo",      service: "SEO local",                  icon: "🔍", type: "mensual",        price: 1200 },
+  { id: "email",    service: "Email marketing",            icon: "✉️", type: "mensual",        price: 1000 },
+  { id: "hosting",  service: "Dominio + Hosting",          icon: "☁️", type: "mensual",        price: 350  },
+  { id: "manten",   service: "Mantenimiento web",          icon: "🔧", type: "mensual",        price: 600  }
 ];
+
+const TYPE_LABEL = {
+  unico:         { label: "Pago único",    color: theme.blue,   bg: "rgba(74,158,255,0.10)"  },
+  mensual:       { label: "Mensual",       color: theme.accent, bg: "rgba(0,255,136,0.09)"   },
+  "setup+mensual": { label: "Setup + mensual", color: theme.yellow, bg: "rgba(255,187,68,0.10)" }
+};
 
 const STATUS_CONFIG = {
   borrador:    { label: "Borrador",       color: theme.muted,  bg: "rgba(255,255,255,0.06)" },
@@ -35,55 +45,82 @@ function draftFromProposal(p) {
   };
 }
 
-function ServiceRow({ svc, onPriceChange, onRemove }) {
-  const discount = svc.originalPrice > 0
+function ServiceRow({ svc, onPriceChange, onSetupPriceChange, onRemove }) {
+  const typeCfg = TYPE_LABEL[svc.type] || TYPE_LABEL.mensual;
+  const isSetup = svc.type === "setup+mensual";
+  const isUnico = svc.type === "unico";
+
+  const discountMonthly = svc.originalPrice > 0
     ? Math.round(((svc.originalPrice - svc.negotiatedPrice) / svc.originalPrice) * 100)
+    : 0;
+  const discountSetup = isSetup && svc.originalSetupPrice > 0
+    ? Math.round(((svc.originalSetupPrice - svc.negotiatedSetupPrice) / svc.originalSetupPrice) * 100)
     : 0;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: theme.s3, borderRadius: 10, border: `1px solid ${theme.border}` }}>
-      <span style={{ fontSize: 20, flexShrink: 0 }}>{svc.icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{svc.service}</div>
-        <div style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>Precio catálogo: {formatCurrency(svc.originalPrice)}</div>
+    <div style={{ background: theme.s3, borderRadius: 10, border: `1px solid ${theme.border}`, overflow: "hidden" }}>
+      {/* Top row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px" }}>
+        <span style={{ fontSize: 20, flexShrink: 0 }}>{svc.icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{svc.service}</div>
+          <span style={{ display: "inline-block", marginTop: 3, padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 600, color: typeCfg.color, background: typeCfg.bg }}>
+            {typeCfg.label}
+          </span>
+        </div>
+        <button
+          onClick={() => onRemove(svc.id)}
+          style={{ background: "transparent", border: "none", color: theme.dim, cursor: "pointer", fontSize: 16, padding: "2px 6px", flexShrink: 0 }}
+        >×</button>
       </div>
 
-      {/* Negotiated price input */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        <span style={{ fontSize: 12, color: theme.muted }}>$</span>
-        <input
-          type="number"
-          value={svc.negotiatedPrice}
-          min={0}
-          onChange={(e) => onPriceChange(svc.id, Math.max(0, parseInt(e.target.value) || 0))}
-          style={{
-            width: 90, background: theme.s2, border: `1px solid ${theme.border}`,
-            borderRadius: 7, padding: "6px 10px", color: theme.text, fontSize: 13,
-            fontWeight: 700, outline: "none", textAlign: "right"
-          }}
-        />
-        <span style={{ fontSize: 11, color: theme.muted }}>/mo</span>
+      {/* Price rows */}
+      <div style={{ borderTop: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 0 }}>
+        {/* Setup price row (setup+mensual only) */}
+        {isSetup && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${theme.border}` }}>
+            <div style={{ fontSize: 11, color: theme.muted, width: 90, flexShrink: 0 }}>Setup inicial</div>
+            <div style={{ fontSize: 11, color: theme.dim, flex: 1 }}>Catálogo: {formatCurrency(svc.originalSetupPrice)}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, color: theme.muted }}>$</span>
+              <input
+                type="number" value={svc.negotiatedSetupPrice} min={0}
+                onChange={(e) => onSetupPriceChange(svc.id, Math.max(0, parseInt(e.target.value) || 0))}
+                style={{ width: 90, background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 7, padding: "5px 10px", color: theme.text, fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" }}
+              />
+            </div>
+            {discountSetup !== 0 && (
+              <div style={{ padding: "3px 8px", borderRadius: 6, background: discountSetup > 0 ? "rgba(255,187,68,0.12)" : "rgba(0,255,136,0.1)", border: `1px solid ${discountSetup > 0 ? "rgba(255,187,68,0.3)" : theme.accentBorder}`, fontSize: 11, fontWeight: 700, color: discountSetup > 0 ? theme.yellow : theme.accent, flexShrink: 0 }}>
+                {discountSetup > 0 ? `−${discountSetup}%` : `+${Math.abs(discountSetup)}%`}
+              </div>
+            )}
+            {discountSetup === 0 && <div style={{ width: 52, flexShrink: 0 }} />}
+          </div>
+        )}
+
+        {/* Monthly / one-time price row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px" }}>
+          <div style={{ fontSize: 11, color: theme.muted, width: 90, flexShrink: 0 }}>
+            {isUnico ? "Pago único" : isSetup ? "Mensual" : "Mensual"}
+          </div>
+          <div style={{ fontSize: 11, color: theme.dim, flex: 1 }}>Catálogo: {formatCurrency(svc.originalPrice)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: theme.muted }}>$</span>
+            <input
+              type="number" value={svc.negotiatedPrice} min={0}
+              onChange={(e) => onPriceChange(svc.id, Math.max(0, parseInt(e.target.value) || 0))}
+              style={{ width: 90, background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 7, padding: "5px 10px", color: theme.text, fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" }}
+            />
+            {!isUnico && <span style={{ fontSize: 11, color: theme.muted }}>/mo</span>}
+          </div>
+          {discountMonthly !== 0 && (
+            <div style={{ padding: "3px 8px", borderRadius: 6, background: discountMonthly > 0 ? "rgba(255,187,68,0.12)" : "rgba(0,255,136,0.1)", border: `1px solid ${discountMonthly > 0 ? "rgba(255,187,68,0.3)" : theme.accentBorder}`, fontSize: 11, fontWeight: 700, color: discountMonthly > 0 ? theme.yellow : theme.accent, flexShrink: 0 }}>
+              {discountMonthly > 0 ? `−${discountMonthly}%` : `+${Math.abs(discountMonthly)}%`}
+            </div>
+          )}
+          {discountMonthly === 0 && <div style={{ width: 52, flexShrink: 0 }} />}
+        </div>
       </div>
-
-      {/* Discount badge */}
-      {discount > 0 ? (
-        <div style={{ padding: "3px 8px", borderRadius: 6, background: "rgba(255,187,68,0.12)", border: "1px solid rgba(255,187,68,0.3)", fontSize: 11, fontWeight: 700, color: theme.yellow, flexShrink: 0 }}>
-          −{discount}%
-        </div>
-      ) : discount < 0 ? (
-        <div style={{ padding: "3px 8px", borderRadius: 6, background: "rgba(0,255,136,0.1)", border: `1px solid ${theme.accentBorder}`, fontSize: 11, fontWeight: 700, color: theme.accent, flexShrink: 0 }}>
-          +{Math.abs(discount)}%
-        </div>
-      ) : (
-        <div style={{ width: 44, flexShrink: 0 }} />
-      )}
-
-      <button
-        onClick={() => onRemove(svc.id)}
-        style={{ background: "transparent", border: "none", color: theme.dim, cursor: "pointer", fontSize: 16, padding: "2px 4px", flexShrink: 0 }}
-      >
-        ×
-      </button>
     </div>
   );
 }
@@ -93,11 +130,7 @@ function VersionBadge({ version, status, date, isActive, onClick }) {
   return (
     <div
       onClick={onClick}
-      style={{
-        padding: "10px 14px", borderRadius: 9, cursor: "pointer",
-        background: isActive ? theme.accentBg : "rgba(255,255,255,0.03)",
-        border: `1px solid ${isActive ? theme.accentBorder : theme.border}`
-      }}
+      style={{ padding: "10px 14px", borderRadius: 9, cursor: "pointer", background: isActive ? theme.accentBg : "rgba(255,255,255,0.03)", border: `1px solid ${isActive ? theme.accentBorder : theme.border}` }}
     >
       <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? theme.accent : theme.text }}>v{version}</div>
       <div style={{ display: "inline-block", marginTop: 4, padding: "2px 7px", borderRadius: 5, background: cfg.bg, color: cfg.color, fontSize: 10, fontWeight: 600 }}>{cfg.label}</div>
@@ -125,10 +158,19 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
 
   function addService(catalogItem) {
     if (draft.services.find((s) => s.id === catalogItem.id)) return;
-    setDraft((d) => ({
-      ...d,
-      services: [...d.services, { id: catalogItem.id, service: catalogItem.service, icon: catalogItem.icon, originalPrice: catalogItem.price, negotiatedPrice: catalogItem.price }]
-    }));
+    const svc = {
+      id: catalogItem.id,
+      service: catalogItem.service,
+      icon: catalogItem.icon,
+      type: catalogItem.type,
+      originalPrice: catalogItem.price,
+      negotiatedPrice: catalogItem.price,
+      ...(catalogItem.type === "setup+mensual" ? {
+        originalSetupPrice: catalogItem.setupPrice,
+        negotiatedSetupPrice: catalogItem.setupPrice
+      } : {})
+    };
+    setDraft((d) => ({ ...d, services: [...d.services, svc] }));
     setAddingService(false);
   }
 
@@ -136,13 +178,34 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
     setDraft((d) => ({ ...d, services: d.services.map((s) => s.id === serviceId ? { ...s, negotiatedPrice: price } : s) }));
   }
 
+  function updateSetupPrice(serviceId, price) {
+    setDraft((d) => ({ ...d, services: d.services.map((s) => s.id === serviceId ? { ...s, negotiatedSetupPrice: price } : s) }));
+  }
+
   function removeService(serviceId) {
     setDraft((d) => ({ ...d, services: d.services.filter((s) => s.id !== serviceId) }));
   }
 
-  const totalOriginal    = draft.services.reduce((sum, s) => sum + s.originalPrice, 0);
-  const totalNegotiated  = draft.services.reduce((sum, s) => sum + s.negotiatedPrice, 0);
-  const totalDiscount    = totalOriginal > 0 ? Math.round(((totalOriginal - totalNegotiated) / totalOriginal) * 100) : 0;
+  // Totals split by type
+  const inicialServices  = draft.services.filter((s) => s.type === "unico" || s.type === "setup+mensual");
+  const mensualServices  = draft.services.filter((s) => s.type === "mensual" || s.type === "setup+mensual");
+
+  const totalInicial     = inicialServices.reduce((sum, s) => {
+    if (s.type === "unico") return sum + s.negotiatedPrice;
+    return sum + (s.negotiatedSetupPrice || 0);
+  }, 0);
+  const totalMensual     = mensualServices.reduce((sum, s) => sum + s.negotiatedPrice, 0);
+  const totalAnual       = totalInicial + totalMensual * 12;
+
+  const catInicial       = inicialServices.reduce((sum, s) => {
+    if (s.type === "unico") return sum + s.originalPrice;
+    return sum + (s.originalSetupPrice || 0);
+  }, 0);
+  const catMensual       = mensualServices.reduce((sum, s) => sum + s.originalPrice, 0);
+
+  const discInicial      = catInicial > 0 ? Math.round(((catInicial - totalInicial) / catInicial) * 100) : 0;
+  const discMensual      = catMensual > 0 ? Math.round(((catMensual - totalMensual) / catMensual) * 100) : 0;
+
   const isNewVersion     = !latest || activeVersionId === null;
   const isDirty          = JSON.stringify(draft) !== JSON.stringify(latest ? draftFromProposal(latest) : emptyDraft());
   const availableCatalog = CATALOG.filter((c) => !draft.services.find((s) => s.id === c.id));
@@ -152,8 +215,8 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
       version: asNewVersion ? (latest?.version || 0) + 1 : (sorted.find((p) => p.id === activeVersionId)?.version || 1),
       status: draft.status,
       services: draft.services,
-      totalOriginal,
-      totalNegotiated,
+      totalOriginal: catMensual,
+      totalNegotiated: totalMensual,
       notes: draft.notes,
       sentAt: draft.sent_at || null,
       isNewVersion: asNewVersion
@@ -192,30 +255,48 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
 
         {/* Editor */}
         <div style={{ overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
-          {/* Status + totals */}
+
+          {/* Status */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 11, color: theme.muted, flexShrink: 0 }}>Estado:</div>
+            <select
+              value={draft.status}
+              onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
+              style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "7px 12px", color: theme.text, fontSize: 13, outline: "none" }}
+            >
+              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                <option key={key} value={key}>{cfg.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Totals */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: theme.muted, marginBottom: 6 }}>Estado</div>
-              <select
-                value={draft.status}
-                onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
-                style={{ width: "100%", background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "8px 12px", color: theme.text, fontSize: 13, outline: "none" }}
-              >
-                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>{cfg.label}</option>
-                ))}
-              </select>
+            {/* Pago inicial */}
+            <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "12px 16px" }}>
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Pago inicial</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: theme.blue }}>{formatCurrency(totalInicial)}</div>
+              {discInicial > 0 && <div style={{ fontSize: 10, color: theme.yellow, marginTop: 3 }}>Catálogo: {formatCurrency(catInicial)} (−{discInicial}%)</div>}
+              {discInicial < 0 && <div style={{ fontSize: 10, color: theme.accent, marginTop: 3 }}>Catálogo: {formatCurrency(catInicial)} (+{Math.abs(discInicial)}%)</div>}
+              {discInicial === 0 && catInicial > 0 && <div style={{ fontSize: 10, color: theme.dim, marginTop: 3 }}>Sin descuento</div>}
+              {catInicial === 0 && <div style={{ fontSize: 10, color: theme.dim, marginTop: 3 }}>Sin pagos únicos</div>}
             </div>
-            <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 16px" }}>
-              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Total mensual</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: theme.accent, marginTop: 4 }}>{formatCurrency(totalNegotiated)}</div>
-              {totalDiscount > 0 && <div style={{ fontSize: 10, color: theme.yellow, marginTop: 2 }}>Catálogo: {formatCurrency(totalOriginal)} (−{totalDiscount}%)</div>}
-              {totalDiscount < 0 && <div style={{ fontSize: 10, color: theme.accent, marginTop: 2 }}>Catálogo: {formatCurrency(totalOriginal)} (+{Math.abs(totalDiscount)}%)</div>}
+
+            {/* Mensual recurrente */}
+            <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "12px 16px" }}>
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Mensual recurrente</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: theme.accent }}>{formatCurrency(totalMensual)}</div>
+              {discMensual > 0 && <div style={{ fontSize: 10, color: theme.yellow, marginTop: 3 }}>Catálogo: {formatCurrency(catMensual)} (−{discMensual}%)</div>}
+              {discMensual < 0 && <div style={{ fontSize: 10, color: theme.accent, marginTop: 3 }}>Catálogo: {formatCurrency(catMensual)} (+{Math.abs(discMensual)}%)</div>}
+              {discMensual === 0 && catMensual > 0 && <div style={{ fontSize: 10, color: theme.dim, marginTop: 3 }}>Sin descuento</div>}
+              {catMensual === 0 && <div style={{ fontSize: 10, color: theme.dim, marginTop: 3 }}>Solo pagos únicos</div>}
             </div>
-            <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 16px" }}>
-              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Anual proyectado</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: theme.yellow, marginTop: 4 }}>{formatCurrency(totalNegotiated * 12)}</div>
-              <div style={{ fontSize: 10, color: theme.muted, marginTop: 2 }}>{draft.services.length} servicio{draft.services.length !== 1 ? "s" : ""}</div>
+
+            {/* Anual proyectado */}
+            <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "12px 16px" }}>
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Anual proyectado</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: theme.yellow }}>{formatCurrency(totalAnual)}</div>
+              <div style={{ fontSize: 10, color: theme.dim, marginTop: 3 }}>Inicial + {draft.services.length > 0 ? "12 meses" : "—"}</div>
             </div>
           </div>
 
@@ -232,11 +313,19 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
 
             {addingService && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, padding: 14, background: theme.s2, borderRadius: 10, border: `1px solid ${theme.border}` }}>
-                {availableCatalog.map((c) => (
-                  <button key={c.id} onClick={() => addService(c)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, background: theme.s3, border: `1px solid ${theme.border}`, color: theme.text, fontSize: 12, cursor: "pointer" }}>
-                    <span>{c.icon}</span>{c.service}<span style={{ color: theme.muted, fontSize: 11 }}>{formatCurrency(c.price)}</span>
-                  </button>
-                ))}
+                {availableCatalog.map((c) => {
+                  const typeCfg = TYPE_LABEL[c.type] || TYPE_LABEL.mensual;
+                  return (
+                    <button key={c.id} onClick={() => addService(c)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 8, background: theme.s3, border: `1px solid ${theme.border}`, color: theme.text, fontSize: 12, cursor: "pointer" }}>
+                      <span>{c.icon}</span>
+                      {c.service}
+                      <span style={{ padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 600, color: typeCfg.color, background: typeCfg.bg }}>{typeCfg.label}</span>
+                      <span style={{ color: theme.muted, fontSize: 11 }}>
+                        {c.type === "setup+mensual" ? `${formatCurrency(c.setupPrice)} + ${formatCurrency(c.price)}/mo` : c.type === "unico" ? formatCurrency(c.price) : `${formatCurrency(c.price)}/mo`}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -247,7 +336,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {draft.services.map((s) => (
-                  <ServiceRow key={s.id} svc={s} onPriceChange={updatePrice} onRemove={removeService} />
+                  <ServiceRow key={s.id} svc={s} onPriceChange={updatePrice} onSetupPriceChange={updateSetupPrice} onRemove={removeService} />
                 ))}
               </div>
             )}
