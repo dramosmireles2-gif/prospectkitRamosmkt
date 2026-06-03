@@ -9,6 +9,7 @@ export function WorkspaceProvider({ children }) {
   const [workspace, setWorkspace] = useState(null);
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(Boolean(hasConfig));
+  const [lastError, setLastError] = useState(null);
   const timeoutRef = useRef(null);
 
   async function refreshWorkspace() {
@@ -31,9 +32,11 @@ export function WorkspaceProvider({ children }) {
       const result = await getCurrentWorkspace(user.id);
       setWorkspace(result?.workspace ?? null);
       setMembership(result?.membership ?? null);
+      setLastError(result ? null : "No se encontró workspace para este usuario.");
       return result;
     } catch (error) {
       console.error("Error loading workspace", error);
+      setLastError(error?.message || JSON.stringify(error) || "Error desconocido");
       setWorkspace(null);
       setMembership(null);
       return null;
@@ -51,7 +54,7 @@ export function WorkspaceProvider({ children }) {
   }, [hasConfig, user?.id]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, membership, loading, refreshWorkspace }}>
+    <WorkspaceContext.Provider value={{ workspace, membership, loading, lastError, refreshWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );

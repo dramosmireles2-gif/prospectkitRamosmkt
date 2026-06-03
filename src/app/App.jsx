@@ -49,7 +49,7 @@ function FullscreenLoader({ label }) {
   );
 }
 
-function WorkspaceReadyScreen({ onRetry, onSignOut }) {
+function WorkspaceReadyScreen({ onRetry, onSignOut, errorDetail }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: theme.bg }}>
       <div style={{ width: "min(620px, 100%)" }}>
@@ -64,6 +64,11 @@ function WorkspaceReadyScreen({ onRetry, onSignOut }) {
               <Button variant="secondary" onClick={onSignOut}>
                 Cerrar sesion
               </Button>
+              {errorDetail ? (
+                <div style={{ fontSize: 11, color: "#ff6b6b", fontFamily: "monospace", wordBreak: "break-all", marginTop: 8, padding: "8px 12px", background: "rgba(255,107,107,0.08)", borderRadius: 6 }}>
+                  {errorDetail}
+                </div>
+              ) : null}
             </>
           }
         />
@@ -78,7 +83,7 @@ function sortProspects(list) {
 
 function AppContent() {
   const { hasConfig, session, profile, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
+  const { workspace, loading: workspaceLoading, lastError, refreshWorkspace } = useWorkspace();
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [prospects, setProspects] = useState([]);
   const [selectedProspectId, setSelectedProspectId] = useState(null);
@@ -324,7 +329,7 @@ function AppContent() {
   }
 
   if (!workspace) {
-    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} />;
+    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} errorDetail={lastError} />;
   }
 
   const canAccessAssets = canUse(FEATURES.ASSET_EXPORT, workspace);
