@@ -61,7 +61,7 @@ function WorkspaceReadyScreen({ onRetry, onSignOut }) {
               <Button variant="primary" onClick={onRetry}>
                 Reintentar
               </Button>
-              <Button variant="secondary" onClick={onSignOut}>
+              <Button variant="secondary" onClick={() => { localStorage.clear(); window.location.reload(); }}>
                 Cerrar sesion
               </Button>
             </>
