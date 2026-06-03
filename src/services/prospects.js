@@ -1,6 +1,6 @@
 import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
-import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore } from "./heuristics";
+import { generateProspectAnalysis, generateProspectAnalysisAI, generateProspectKit, generateProspectKitAI, estimateOpportunityScore } from "./heuristics";
 import { supabase } from "./supabase";
 
 function normalizeAnalysis(row) {
@@ -211,21 +211,25 @@ export async function ensureProspectAnalysis(workspaceId, prospect) {
     return prospect;
   }
 
-  const analysis = generateProspectAnalysis(prospect);
-  return saveProspectAnalysis({
-    workspaceId,
-    prospectId: prospect.id,
-    analysis
-  });
+  let analysis;
+  try {
+    analysis = await generateProspectAnalysisAI(prospect);
+  } catch {
+    analysis = generateProspectAnalysis(prospect);
+  }
+
+  return saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
 }
 
 export async function regenerateProspectAnalysis(workspaceId, prospect) {
-  const analysis = generateProspectAnalysis(prospect);
-  return saveProspectAnalysis({
-    workspaceId,
-    prospectId: prospect.id,
-    analysis
-  });
+  let analysis;
+  try {
+    analysis = await generateProspectAnalysisAI(prospect);
+  } catch {
+    analysis = generateProspectAnalysis(prospect);
+  }
+
+  return saveProspectAnalysis({ workspaceId, prospectId: prospect.id, analysis });
 }
 
 export async function ensureProspectKit(workspaceId, prospect) {
@@ -234,22 +238,27 @@ export async function ensureProspectKit(workspaceId, prospect) {
     return analyzedProspect;
   }
 
-  const kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
-  return saveProspectKit({
-    workspaceId,
-    prospectId: analyzedProspect.id,
-    kit
-  });
+  let kit;
+  try {
+    kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
+  } catch {
+    kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
+  }
+
+  return saveProspectKit({ workspaceId, prospectId: analyzedProspect.id, kit });
 }
 
 export async function regenerateProspectKit(workspaceId, prospect) {
   const analyzedProspect = prospect.analysis ? prospect : await ensureProspectAnalysis(workspaceId, prospect);
-  const kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
-  return saveProspectKit({
-    workspaceId,
-    prospectId: analyzedProspect.id,
-    kit
-  });
+
+  let kit;
+  try {
+    kit = await generateProspectKitAI(analyzedProspect, analyzedProspect.analysis);
+  } catch {
+    kit = generateProspectKit(analyzedProspect, analyzedProspect.analysis);
+  }
+
+  return saveProspectKit({ workspaceId, prospectId: analyzedProspect.id, kit });
 }
 
 export async function getDashboardMetrics(workspaceId) {

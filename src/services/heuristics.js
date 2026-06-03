@@ -263,6 +263,38 @@ export function estimateOpportunityScore(prospect) {
   return clamp(Math.round(100 - averageMaturity + missingIntensity), 40, 96);
 }
 
+export async function generateProspectAnalysisAI(prospect) {
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prospect })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API error ${res.status}`);
+  }
+
+  const { analysis } = await res.json();
+  return analysis;
+}
+
+export async function generateProspectKitAI(prospect, analysis) {
+  const res = await fetch("/api/generate-kit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prospect, analysis })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API error ${res.status}`);
+  }
+
+  const { kit } = await res.json();
+  return kit;
+}
+
 export function generateProspectAnalysis(prospect) {
   const playbook = getPlaybook(prospect.industry);
   const scoreBreakdown = buildScoreBreakdown(prospect);
