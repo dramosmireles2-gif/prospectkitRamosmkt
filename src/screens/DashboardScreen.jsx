@@ -1,6 +1,7 @@
 import { EmptyState, Button } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCompactCurrency } from "../utils/format";
+import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;
@@ -8,7 +9,17 @@ function scoreColor(score) {
   return theme.blue;
 }
 
-export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspect, onSeedDemo, loading }) {
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysDiff(dateStr) {
+  const today = new Date(todayStr());
+  const target = new Date(dateStr);
+  return Math.floor((today - target) / 86400000);
+}
+
+export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView, onSelectProspect, onSeedDemo, loading }) {
   if (!prospects.length) {
     return (
       <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
@@ -31,6 +42,62 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
   }
 
   const topPick = metrics.topProspect;
+  const today = todayStr();
+
+  // --- KPI calculations ---
+  const mrr = proposals
+    .filter((p) => p.status === "aceptada" || p.status === "negociacion")
+    .reduce((sum, p) => sum + (p.totalNegotiated || 0), 0);
+
+  const pipeline = proposals
+    .filter((p) => p.status !== "rechazada" && !(p.status === "borrador" && !p.totalNegotiated))
+    .reduce((sum, p) => sum + (p.totalNegotiated || 0), 0);
+
+  const wonCount = prospects.filter((p) => p.pipelineStage === "ganado").length;
+  const convRate = prospects.length > 0 ? Math.round((wonCount / prospects.length) * 100) : 0;
+
+  const hotCount = prospects.filter((p) => p.leadTemperature === "urgente" || p.leadTemperature === "caliente").length;
+
+  // --- Pipeline funnel ---
+  const stageCounts = {};
+  for (const p of prospects) {
+    const stage = p.pipelineStage || "lead";
+    stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+  }
+  const activeFunnelStages = PIPELINE_STAGES.filter((s) => stageCounts[s.id] > 0);
+
+  // --- Overdue actions ---
+  const overdueProspects = prospects
+    .filter((p) => p.nextActionDate && p.nextActionDate <= today)
+    .sort((a, b) => a.nextActionDate.localeCompare(b.nextActionDate))
+    .slice(0, 5);
+
+  const kpiCards = [
+    {
+      label: "Ingreso Recurrente Activo",
+      sublabel: "MRR",
+      value: formatCompactCurrency(mrr),
+      color: theme.accent
+    },
+    {
+      label: "Pipeline Total",
+      sublabel: "Propuestas activas",
+      value: formatCompactCurrency(pipeline),
+      color: theme.blue
+    },
+    {
+      label: "Tasa de Conversión",
+      sublabel: "Prospectos ganados",
+      value: `${convRate}%`,
+      color: theme.yellow
+    },
+    {
+      label: "Prospectos Calientes",
+      sublabel: "Urgente o caliente",
+      value: hotCount,
+      color: theme.red
+    }
+  ];
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -55,6 +122,149 @@ export function DashboardScreen({ prospects, metrics, onOpenView, onSelectProspe
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+
+        {/* === KPI ROW === */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          {kpiCards.map((card) => (
+            <div
+              key={card.label}
+              style={{
+                background: theme.s2,
+                border: `1px solid ${theme.border}`,
+                borderRadius: 10,
+                padding: "16px 18px",
+                position: "relative",
+                overflow: "hidden"
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: -30,
+                  right: -30,
+                  width: 100,
+                  height: 100,
+                  borderRadius: "50%",
+                  background: `radial-gradient(circle, ${card.color}15 0%, transparent 65%)`
+                }}
+              />
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 2 }}>
+                {card.sublabel}
+              </div>
+              <div style={{ fontSize: 11, color: theme.dim, marginBottom: 8 }}>{card.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: card.color, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                {card.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* === MINI PIPELINE FUNNEL === */}
+        {activeFunnelStages.length > 0 && (
+          <div
+            style={{
+              background: theme.s2,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 10,
+              padding: "14px 18px",
+              cursor: "pointer"
+            }}
+            onClick={() => onOpenView("pipeline")}
+          >
+            <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 12 }}>
+              Pipeline — click para abrir
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {activeFunnelStages.map((stage) => (
+                <div
+                  key={stage.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "6px 12px",
+                    borderRadius: 20,
+                    background: stage.bg || `${stage.color}18`,
+                    border: `1px solid ${stage.color}40`,
+                    flexShrink: 0
+                  }}
+                >
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: stage.color, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: theme.text, fontWeight: 600 }}>{stage.label}</span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 900,
+                      color: stage.color,
+                      minWidth: 18,
+                      textAlign: "center"
+                    }}
+                  >
+                    {stageCounts[stage.id]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* === OVERDUE ACTIONS === */}
+        {overdueProspects.length > 0 && (
+          <div
+            style={{
+              background: theme.s2,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 10,
+              padding: "14px 18px"
+            }}
+          >
+            <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 12 }}>
+              Proximas acciones urgentes
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {overdueProspects.map((prospect) => {
+                const days = daysDiff(prospect.nextActionDate);
+                const actionType = NEXT_ACTION_TYPES.find((t) => t.id === prospect.nextActionType);
+                return (
+                  <div
+                    key={prospect.id}
+                    onClick={() => {
+                      onSelectProspect(prospect);
+                      onOpenView(prospect.analysis ? "analysis" : "detail");
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "9px 12px",
+                      borderRadius: 8,
+                      background: "rgba(255,68,85,0.05)",
+                      border: `1px solid rgba(255,68,85,0.2)`,
+                      cursor: "pointer"
+                    }}
+                  >
+                    <span style={{ fontSize: 15, flexShrink: 0 }}>{actionType?.icon || "⚡"}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {prospect.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: theme.muted }}>{actionType?.label || prospect.nextActionType}</div>
+                    </div>
+                    <div style={{ flexShrink: 0, textAlign: "right" }}>
+                      {days === 0 ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: theme.yellow }}>Hoy</span>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: theme.red }}>+{days}d</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* === EXISTING CONTENT === */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 14 }}>
           <div
             style={{

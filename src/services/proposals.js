@@ -28,6 +28,17 @@ export async function listProposals(prospectId) {
   return (data || []).map(normalizeProposal);
 }
 
+export async function listAllProposals(workspaceId) {
+  const { data, error } = await supabase
+    .from("prospect_proposals")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(normalizeProposal);
+}
+
 export async function saveProposal(workspaceId, prospectId, payload, isNewVersion) {
   if (!isNewVersion && payload.id) {
     const { data, error } = await supabase

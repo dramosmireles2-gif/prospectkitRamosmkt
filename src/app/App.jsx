@@ -33,7 +33,7 @@ import { AttackPlanScreen } from "../screens/AttackPlanScreen";
 import { ProposalScreen } from "../screens/ProposalScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
-import { listProposals, saveProposal } from "../services/proposals";
+import { listProposals, listAllProposals, saveProposal } from "../services/proposals";
 
 function FullscreenLoader({ label }) {
   const [slow, setSlow] = useState(false);
@@ -96,6 +96,7 @@ function AppContent() {
   const [busy, setBusy] = useState("");
   const [loadingProspects, setLoadingProspects] = useState(false);
   const [proposals, setProposals] = useState([]);
+  const [allProposals, setAllProposals] = useState([]);
   const [savingProposal, setSavingProposal] = useState(false);
 
   const selectedProspect = prospects.find((prospect) => prospect.id === selectedProspectId) || null;
@@ -132,8 +133,12 @@ function AppContent() {
     }
 
     setLoadingProspects(true);
-    const { prospects: rows } = await listProspects(workspace.id);
+    const [{ prospects: rows }, allProps] = await Promise.all([
+      listProspects(workspace.id),
+      listAllProposals(workspace.id).catch(() => [])
+    ]);
     setProspects(sortProspects(rows));
+    setAllProposals(allProps);
     setLoadingProspects(false);
   }
 
@@ -401,6 +406,7 @@ function AppContent() {
     <DashboardScreen
       prospects={prospects}
       metrics={metrics}
+      proposals={allProposals}
       onOpenView={navigate}
       onSelectProspect={(prospect) => setSelectedProspectId(prospect?.id || null)}
       onSeedDemo={handleSeedDemo}
