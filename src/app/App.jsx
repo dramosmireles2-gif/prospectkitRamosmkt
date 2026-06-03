@@ -34,7 +34,7 @@ import { AttackPlanScreen } from "../screens/AttackPlanScreen";
 import { ProposalScreen } from "../screens/ProposalScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
-import { listProposals, listAllProposals, saveProposal } from "../services/proposals";
+import { getActiveProposalMap, listProposals, listAllProposals, saveProposal } from "../services/proposals";
 
 function FullscreenLoader({ label }) {
   const [slow, setSlow] = useState(false);
@@ -106,7 +106,8 @@ function AppContent() {
   const [savingProposal, setSavingProposal] = useState(false);
 
   const selectedProspect = prospects.find((prospect) => prospect.id === selectedProspectId) || null;
-  const metrics = buildDashboardMetrics(prospects);
+  const activeProposalMap = getActiveProposalMap(allProposals);
+  const metrics = buildDashboardMetrics(prospects, activeProposalMap);
 
   useEffect(() => {
     if (!workspace) {
@@ -347,6 +348,10 @@ function AppContent() {
         const without = prev.filter((p) => p.id !== saved.id);
         return [...without, saved].sort((a, b) => b.version - a.version);
       });
+      setAllProposals((prev) => {
+        const without = prev.filter((proposal) => proposal.id !== saved.id);
+        return [saved, ...without].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+      });
 
       // Auto-advance pipeline stage based on proposal status
       const targetStage = PROPOSAL_STAGE_MAP[payload.status];
@@ -414,6 +419,7 @@ function AppContent() {
       prospects={prospects}
       metrics={metrics}
       proposals={allProposals}
+      activeProposalMap={activeProposalMap}
       onOpenView={navigate}
       onSelectProspect={(prospect) => setSelectedProspectId(prospect?.id || null)}
       onSeedDemo={handleSeedDemo}
@@ -457,6 +463,7 @@ function AppContent() {
     screen = (
       <AnalysisScreen
         prospect={selectedProspect}
+        proposals={proposals}
         onGenerateAnalysis={() => handleGenerateAnalysis(selectedProspect)}
         onRegenerateAnalysis={() => handleRegenerateAnalysis(selectedProspect)}
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
@@ -483,6 +490,7 @@ function AppContent() {
     screen = (
       <PipelineScreen
         prospects={prospects}
+        activeProposalMap={activeProposalMap}
         onUpdateStage={handleUpdatePipelineStage}
         onSelectProspect={(prospect) => {
           setSelectedProspectId(prospect.id);
@@ -493,7 +501,7 @@ function AppContent() {
   }
 
   if (view === VIEWS.ASSETS) {
-    screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
+    screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} proposals={proposals} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
   }
 
   if (view === VIEWS.ROI) {
@@ -541,6 +549,7 @@ function AppContent() {
     screen = (
       <AttackPlanScreen
         prospects={prospects}
+        activeProposalMap={activeProposalMap}
         onSelectProspect={(prospect) => {
           setSelectedProspectId(prospect.id);
           setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);

@@ -4,6 +4,7 @@ import { NEXT_ACTION_TYPES, PIPELINE_STAGES } from "../app/constants";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { getProspectCommercialSnapshot } from "../services/proposals";
 
 const TEMP_WEIGHT = { urgente: 40, caliente: 30, tibio: 15, frio: 5 };
 const STAGE_WEIGHT = { lead: 4, contactado: 8, respondio: 14, reunion: 20, propuesta: 26, negociacion: 32, ganado: 0, perdido: 0 };
@@ -45,12 +46,13 @@ function ActionChip({ prospect }) {
   );
 }
 
-function ProspectRow({ prospect, rank, onSelect, isMobile }) {
+function ProspectRow({ prospect, activeProposal, rank, onSelect, isMobile }) {
   const [hovered, setHovered] = useState(false);
   const score = priorityScore(prospect);
   const currentTier = tier(score);
   const tierConfig = TIERS[currentTier];
   const stage = PIPELINE_STAGES.find((item) => item.id === prospect.pipelineStage);
+  const pricingSnapshot = getProspectCommercialSnapshot(prospect, activeProposal);
 
   return (
     <div
@@ -91,10 +93,10 @@ function ProspectRow({ prospect, rank, onSelect, isMobile }) {
         </div>
       ) : null}
 
-      {prospect.analysis?.revenue?.min > 0 ? (
+      {pricingSnapshot.pricingSummary?.firstYear?.min > 0 ? (
         <div style={{ textAlign: isMobile ? "left" : "right", flexShrink: 0, minWidth: 80 }}>
           <div style={{ fontSize: 10, color: theme.dim }}>Valor 1er ano</div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: theme.accent }}>{formatCurrency(prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis.revenue.min)}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: theme.accent }}>{formatCurrency(pricingSnapshot.pricingSummary.firstYear.min)}</div>
         </div>
       ) : null}
 
@@ -105,7 +107,7 @@ function ProspectRow({ prospect, rank, onSelect, isMobile }) {
   );
 }
 
-function TierSection({ tierId, prospects, onSelect, isMobile }) {
+function TierSection({ tierId, prospects, activeProposalMap, onSelect, isMobile }) {
   const config = TIERS[tierId];
   if (!prospects.length) return null;
 
@@ -119,7 +121,7 @@ function TierSection({ tierId, prospects, onSelect, isMobile }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {prospects.map((prospect, index) => (
-          <ProspectRow key={prospect.id} prospect={prospect} rank={index + 1} onSelect={onSelect} isMobile={isMobile} />
+          <ProspectRow key={prospect.id} prospect={prospect} activeProposal={activeProposalMap?.[prospect.id]} rank={index + 1} onSelect={onSelect} isMobile={isMobile} />
         ))}
       </div>
     </div>
@@ -172,7 +174,7 @@ function FilterBar({ filter, setFilter, overdueCount, noActionCount, mobile = fa
   );
 }
 
-export function AttackPlanScreen({ prospects, onSelectProspect }) {
+export function AttackPlanScreen({ prospects, activeProposalMap = {}, onSelectProspect }) {
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState("all");
 
@@ -194,7 +196,7 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
 
   const overdueCount = active.filter((prospect) => prospect.nextActionDate && prospect.nextActionDate < todayDate).length;
   const noActionCount = active.filter((prospect) => !prospect.nextActionType).length;
-  const totalRevenue = today.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue?.min || 0), 0);
+  const totalRevenue = today.reduce((sum, prospect) => sum + (getProspectCommercialSnapshot(prospect, activeProposalMap[prospect.id]).pricingSummary?.firstYear?.min || 0), 0);
   const metricItems = [
     { label: "Actuar hoy", value: today.length, color: theme.red },
     { label: "Esta semana", value: week.length, color: theme.yellow },
@@ -252,9 +254,9 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
           </div>
         ) : (
           <>
-            <TierSection tierId="today" prospects={today} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
-            <TierSection tierId="week" prospects={week} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
-            <TierSection tierId="radar" prospects={radar} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
+            <TierSection tierId="today" prospects={today} activeProposalMap={activeProposalMap} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
+            <TierSection tierId="week" prospects={week} activeProposalMap={activeProposalMap} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
+            <TierSection tierId="radar" prospects={radar} activeProposalMap={activeProposalMap} onSelect={(prospect) => onSelectProspect(prospect)} isMobile={isMobile} />
           </>
         )}
       </div>

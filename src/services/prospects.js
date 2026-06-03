@@ -303,14 +303,23 @@ export async function getDashboardMetrics(workspaceId) {
   return buildDashboardMetrics(prospects);
 }
 
-export function buildDashboardMetrics(prospects) {
+export function buildDashboardMetrics(prospects, activeProposalMap = {}) {
   const rankedProspects = [...prospects].sort((a, b) => b.opportunityScore - a.opportunityScore);
   const totalProspects = prospects.length;
   const analyzedProspects = prospects.filter((prospect) => prospect.analysis).length;
   const kitsReady = prospects.filter((prospect) => prospect.kit).length;
-  const revenueMinTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue.min || 0), 0);
-  const monthlyPotentialTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.monthly?.min || 0), 0);
-  const oneTimePotentialTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.oneTime?.min || 0), 0);
+  const revenueMinTotal = prospects.reduce((sum, prospect) => {
+    const proposalSummary = activeProposalMap[prospect.id]?.services?.length ? summarizeServicePricing(activeProposalMap[prospect.id].services) : null;
+    return sum + (proposalSummary?.firstYear?.min || prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue.min || 0);
+  }, 0);
+  const monthlyPotentialTotal = prospects.reduce((sum, prospect) => {
+    const proposalSummary = activeProposalMap[prospect.id]?.services?.length ? summarizeServicePricing(activeProposalMap[prospect.id].services) : null;
+    return sum + (proposalSummary?.monthly?.min || prospect.analysis?.pricingSummary?.monthly?.min || 0);
+  }, 0);
+  const oneTimePotentialTotal = prospects.reduce((sum, prospect) => {
+    const proposalSummary = activeProposalMap[prospect.id]?.services?.length ? summarizeServicePricing(activeProposalMap[prospect.id].services) : null;
+    return sum + (proposalSummary?.oneTime?.min || prospect.analysis?.pricingSummary?.oneTime?.min || 0);
+  }, 0);
   const topProspect = rankedProspects.find((prospect) => prospect.analysis) || rankedProspects[0] || null;
 
   const recommendations = rankedProspects.slice(0, 4).map((prospect) => ({

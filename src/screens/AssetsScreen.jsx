@@ -4,6 +4,7 @@ import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { formatServicePricing } from "../services/serviceCatalog";
+import { getActiveProposal, getProspectCommercialSnapshot } from "../services/proposals";
 
 const templates = [
   { id: "score-card",     label: "Score Card",          desc: "Oportunidad detectada · Landscape" },
@@ -44,8 +45,10 @@ function Brand() {
   );
 }
 
-function AssetTemplate({ id, prospect, format }) {
+function AssetTemplate({ id, prospect, format, pricingSnapshot }) {
   const analysis = prospect.analysis;
+  const displayServices = pricingSnapshot?.services?.length ? pricingSnapshot.services : analysis?.recommendedServices || [];
+  const displayPricingSummary = pricingSnapshot?.pricingSummary || analysis?.pricingSummary || { oneTime: { min: 0 }, monthly: { min: 0 }, firstYear: { min: analysis?.revenue?.min || 0 } };
   const score = prospect.opportunityScore;
   const color = score >= 85 ? accent : score >= 70 ? "#ffbb44" : "#4a9eff";
   const isStory = format?.id === "story";
@@ -77,7 +80,7 @@ function AssetTemplate({ id, prospect, format }) {
           </div>
           <div style={{ flex: 1, background: "rgba(255,255,255,0.02)", borderLeft: isStory ? "none" : "1px solid rgba(255,255,255,0.07)", borderTop: isStory ? "1px solid rgba(255,255,255,0.07)" : "none", padding: isStory ? "32px 56px" : "48px 36px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>IA / heurística recomienda</div>
-            {(analysis?.recommendedServices || []).slice(0, isStory ? 3 : 4).map((service) => (
+            {displayServices.slice(0, isStory ? 3 : 4).map((service) => (
               <div key={service.service} style={{ padding: "13px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
                   <span style={{ fontSize: 18 }}>{service.icon}</span>
@@ -178,7 +181,7 @@ function AssetTemplate({ id, prospect, format }) {
               </div>
               {!isStory && <div style={{ width: 1, height: 60, background: "rgba(255,255,255,0.1)" }} />}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {(analysis?.recommendedServices || []).slice(0, 3).map((service) => (
+                {displayServices.slice(0, 3).map((service) => (
                   <div key={service.service} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 16 }}>{service.icon}</span>
                     <span style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>{service.service}</span>
@@ -234,7 +237,7 @@ function AssetTemplate({ id, prospect, format }) {
           </div>
           <div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 12, fontWeight: 700 }}>Recomendaciones</div>
-            {(analysis?.recommendedServices || []).map((service) => (
+            {displayServices.map((service) => (
               <div key={service.service} style={{ display: "flex", gap: 10, marginBottom: 12, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", alignItems: "center" }}>
                 <span style={{ fontSize: 16 }}>{service.icon}</span>
                 <div style={{ flex: 1 }}>
@@ -246,9 +249,9 @@ function AssetTemplate({ id, prospect, format }) {
             ))}
             <div style={{ marginTop: 16, padding: "14px 18px", background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.2)", borderRadius: 10 }}>
               <div style={{ fontSize: 10, color: accent, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 6 }}>Potencial comercial</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{formatCurrency(analysis?.pricingSummary?.oneTime?.min || 0)} inicial</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: accent, marginTop: 4 }}>{formatCurrency(analysis?.pricingSummary?.monthly?.min || 0)} mensual</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Valor 1er ano: {formatCurrency(analysis?.pricingSummary?.firstYear?.min || analysis?.revenue.min || 0)}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{formatCurrency(displayPricingSummary.oneTime?.min || 0)} inicial</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: accent, marginTop: 4 }}>{formatCurrency(displayPricingSummary.monthly?.min || 0)} mensual</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Valor 1er ano: {formatCurrency(displayPricingSummary.firstYear?.min || analysis?.revenue.min || 0)}</div>
             </div>
           </div>
         </div>
@@ -257,7 +260,7 @@ function AssetTemplate({ id, prospect, format }) {
   );
 }
 
-export function AssetsScreen({ prospect }) {
+export function AssetsScreen({ prospect, proposals = [] }) {
   const isMobile = useIsMobile();
   const [templateId, setTemplateId] = useState("score-card");
   const [formatId, setFormatId] = useState("landscape");
@@ -267,6 +270,7 @@ export function AssetsScreen({ prospect }) {
   const exportRef = useRef(null);
 
   const fmt = FORMATS.find((f) => f.id === formatId) || FORMATS[0];
+  const pricingSnapshot = getProspectCommercialSnapshot(prospect, getActiveProposal(proposals));
 
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Los assets se construyen con los datos persistidos del prospecto, su análisis y su kit." />;
@@ -382,7 +386,7 @@ export function AssetsScreen({ prospect }) {
             <div style={{ position: "relative" }}>
               <div style={{ width: previewW, height: previewH, overflow: "hidden", borderRadius: 10, boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)" }}>
                 <div style={{ width: fmt.w, height: fmt.h, transform: `scale(${previewScale})`, transformOrigin: "top left" }}>
-                  <AssetTemplate id={templateId} prospect={prospect} format={fmt} />
+                  <AssetTemplate id={templateId} prospect={prospect} format={fmt} pricingSnapshot={pricingSnapshot} />
                 </div>
               </div>
               <div style={{ position: "absolute", bottom: -28, left: 0, right: 0, textAlign: "center", fontSize: 10, color: theme.dim }}>
@@ -412,7 +416,7 @@ export function AssetsScreen({ prospect }) {
       {/* Off-screen export canvas */}
       <div style={{ position: "fixed", left: -4000, top: 0, width: fmt.w, height: fmt.h, pointerEvents: "none" }}>
         <div ref={exportRef} style={{ width: fmt.w, height: fmt.h }}>
-          <AssetTemplate id={templateId} prospect={prospect} format={fmt} />
+          <AssetTemplate id={templateId} prospect={prospect} format={fmt} pricingSnapshot={pricingSnapshot} />
         </div>
       </div>
 
@@ -435,7 +439,7 @@ export function AssetsScreen({ prospect }) {
                 <>
                   <div style={{ width: mw, height: mh, overflow: "hidden", borderRadius: 12, boxShadow: "0 32px 80px rgba(0,0,0,0.9)" }}>
                     <div style={{ width: fmt.w, height: fmt.h, transform: `scale(${modalScale})`, transformOrigin: "top left" }}>
-                      <AssetTemplate id={templateId} prospect={prospect} format={fmt} />
+                      <AssetTemplate id={templateId} prospect={prospect} format={fmt} pricingSnapshot={pricingSnapshot} />
                     </div>
                   </div>
                   <button

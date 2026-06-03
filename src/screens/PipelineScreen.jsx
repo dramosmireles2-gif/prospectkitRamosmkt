@@ -4,6 +4,7 @@ import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { getProspectCommercialSnapshot } from "../services/proposals";
 
 function scoreColor(s) {
   if (s >= 80) return theme.accent;
@@ -12,8 +13,9 @@ function scoreColor(s) {
   return theme.muted;
 }
 
-function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile }) {
+function PipelineCard({ prospect, activeProposal, onSelect, onDragStart, onUpdateStage, isMobile }) {
   const [hovered, setHovered] = useState(false);
+  const pricingSnapshot = getProspectCommercialSnapshot(prospect, activeProposal);
 
   return (
     <div
@@ -54,11 +56,11 @@ function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile
       <TemperatureBadge temperature={prospect.leadTemperature} size="sm" />
 
       {/* Revenue estimate */}
-      {prospect.analysis?.revenue?.min > 0 && (
+      {pricingSnapshot.pricingSummary?.firstYear?.min > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 10, color: theme.muted }}>Valor 1er ano:</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>
-            {formatCurrency(prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis.revenue.min)}
+            {formatCurrency(pricingSnapshot.pricingSummary.firstYear.min)}
           </span>
         </div>
       )}
@@ -104,8 +106,8 @@ function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile
   );
 }
 
-function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage }) {
-  const totalRevenue = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue?.min || 0), 0);
+function PipelineColumn({ stage, prospects, activeProposalMap, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage }) {
+  const totalRevenue = prospects.reduce((sum, prospect) => sum + (getProspectCommercialSnapshot(prospect, activeProposalMap?.[prospect.id]).pricingSummary?.firstYear?.min || 0), 0);
 
   return (
     <div
@@ -152,6 +154,7 @@ function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDrag
           <PipelineCard
             key={p.id}
             prospect={p}
+            activeProposal={activeProposalMap?.[p.id]}
             onSelect={onSelect}
             onDragStart={onDragStart}
             onUpdateStage={onUpdateStage}
@@ -172,13 +175,13 @@ function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDrag
   );
 }
 
-function PipelineMetrics({ prospects, isMobile = false }) {
+function PipelineMetrics({ prospects, activeProposalMap, isMobile = false }) {
   const total = prospects.length;
   const ganados = prospects.filter(p => p.pipelineStage === "ganado").length;
   const activos = prospects.filter(p => !["ganado", "perdido"].includes(p.pipelineStage)).length;
   const revenueTotal = prospects
     .filter(p => !["perdido"].includes(p.pipelineStage))
-    .reduce((sum, p) => sum + (p.analysis?.pricingSummary?.firstYear?.min || p.analysis?.revenue?.min || 0), 0);
+    .reduce((sum, p) => sum + (getProspectCommercialSnapshot(p, activeProposalMap?.[p.id]).pricingSummary?.firstYear?.min || 0), 0);
   const tasaCierre = total > 0 ? Math.round((ganados / total) * 100) : 0;
   const calientes = prospects.filter(p => ["caliente", "urgente"].includes(p.leadTemperature)).length;
 
@@ -228,7 +231,7 @@ function PipelineMetrics({ prospects, isMobile = false }) {
   );
 }
 
-export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
+export function PipelineScreen({ prospects, activeProposalMap = {}, onUpdateStage, onSelectProspect }) {
   const isMobile = useIsMobile();
   const [dragOverStage, setDragOverStage] = useState(null);
   const dragProspectId = useRef(null);
@@ -275,7 +278,7 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
 
       {!isMobile ? (
         <div style={{ flexShrink: 0, paddingTop: 14 }}>
-          <PipelineMetrics prospects={prospects} />
+          <PipelineMetrics prospects={prospects} activeProposalMap={activeProposalMap} />
         </div>
       ) : (
         <div
@@ -287,7 +290,7 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
             backdropFilter: "blur(16px)"
           }}
         >
-          <PipelineMetrics prospects={prospects} isMobile={true} />
+          <PipelineMetrics prospects={prospects} activeProposalMap={activeProposalMap} isMobile={true} />
         </div>
       )}
 
@@ -308,6 +311,7 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
             key={stage.id}
             stage={stage}
             prospects={grouped[stage.id] || []}
+            activeProposalMap={activeProposalMap}
             isDragOver={dragOverStage === stage.id}
             onDragOver={(e) => { handleDragOver(e); handleDragEnter(stage.id); }}
             onDrop={handleDrop}

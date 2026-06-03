@@ -3,6 +3,7 @@ import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { formatServicePricing, getServiceNote } from "../services/serviceCatalog";
+import { getActiveProposal, getProspectCommercialSnapshot } from "../services/proposals";
 
 function printAnalysis() {
   const styleId = "prospect-print-style";
@@ -22,7 +23,7 @@ function printAnalysis() {
   setTimeout(() => style.remove(), 2000);
 }
 
-export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets, onOpenROI, onOpenLTV, onOpenGap }) {
+export function AnalysisScreen({ prospect, proposals = [], onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets, onOpenROI, onOpenLTV, onOpenGap }) {
   const isMobile = useIsMobile();
 
   if (!prospect) {
@@ -30,11 +31,13 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
   }
 
   const analysis = prospect.analysis;
-  const pricingSummary = analysis?.pricingSummary || {
+  const pricingSnapshot = getProspectCommercialSnapshot(prospect, getActiveProposal(proposals));
+  const pricingSummary = pricingSnapshot.pricingSummary || {
     oneTime: { min: 0, max: 0 },
     monthly: { min: 0, max: 0 },
     firstYear: { min: analysis?.revenue?.min || 0, max: analysis?.revenue?.max || 0 }
   };
+  const recommendedServices = pricingSnapshot.services?.length ? pricingSnapshot.services : analysis?.recommendedServices || [];
   const tagColors = { "Quick Win": theme.accent, Revenue: theme.yellow, Proyecto: theme.blue, Retención: theme.purple, Retencion: theme.purple };
   const priorityColors = { urgente: theme.red, alta: theme.yellow, media: theme.blue };
 
@@ -106,6 +109,12 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
       </div>
 
       <div id="analysis-print-target" style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
+        {pricingSnapshot.source === "proposal" && pricingSnapshot.proposal ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
+            <span style={{ fontSize: 16 }}>P</span>
+            <span>Mostrando precios negociados de <strong style={{ color: theme.accent }}>Propuesta v{pricingSnapshot.proposal.version}</strong> ({pricingSnapshot.proposal.status}).</span>
+          </div>
+        ) : null}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "180px 1fr", gap: 14 }}>
           <Card style={{ padding: 22, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
             <ScoreRing value={analysis.opportunityScore} size={90} />
@@ -174,7 +183,7 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 12 }}>Qué conviene vender</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {analysis.recommendedServices.map((service, index) => (
+            {recommendedServices.map((service, index) => (
               <div
                 key={service.service}
                 style={{

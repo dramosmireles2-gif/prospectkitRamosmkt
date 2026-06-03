@@ -4,6 +4,7 @@ import { formatCompactCurrency } from "../utils/format";
 import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { formatServicePricing } from "../services/serviceCatalog";
+import { getProposalPricingSummary, getProspectCommercialSnapshot } from "../services/proposals";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;
@@ -21,7 +22,7 @@ function daysDiff(dateStr) {
   return Math.floor((today - target) / 86400000);
 }
 
-export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView, onSelectProspect, onSeedDemo, loading }) {
+export function DashboardScreen({ prospects, metrics, proposals = [], activeProposalMap = {}, onOpenView, onSelectProspect, onSeedDemo, loading }) {
   const isMobile = useIsMobile();
 
   if (!prospects.length) {
@@ -46,16 +47,17 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
   }
 
   const topPick = metrics.topProspect;
+  const topPickSnapshot = topPick ? getProspectCommercialSnapshot(topPick, activeProposalMap[topPick.id]) : null;
   const today = todayStr();
 
   // --- KPI calculations ---
   const mrr = proposals
     .filter((p) => p.status === "aceptada" || p.status === "negociacion")
-    .reduce((sum, p) => sum + (p.totalNegotiated || 0), 0);
+    .reduce((sum, p) => sum + (getProposalPricingSummary(p).monthly.min || 0), 0);
 
   const pipeline = proposals
     .filter((p) => p.status !== "rechazada" && !(p.status === "borrador" && !p.totalNegotiated))
-    .reduce((sum, p) => sum + (p.totalNegotiated || 0), 0);
+    .reduce((sum, p) => sum + (getProposalPricingSummary(p).firstYear.min || 0), 0);
 
   const wonCount = prospects.filter((p) => p.pipelineStage === "ganado").length;
   const convRate = prospects.length > 0 ? Math.round((wonCount / prospects.length) * 100) : 0;
@@ -84,7 +86,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
       color: theme.accent
     },
     {
-      label: "Pipeline Total",
+      label: "Pipeline 1er ano",
       sublabel: "Propuestas activas",
       value: formatCompactCurrency(pipeline),
       color: theme.blue
@@ -344,13 +346,13 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                 </div>
               </div>
 
-              {topPick?.analysis?.recommendedServices?.length ? (
+              {topPickSnapshot?.services?.length ? (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 10 }}>
                     Que conviene vender primero
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                    {topPick.analysis.recommendedServices.slice(0, 3).map((service) => (
+                    {topPickSnapshot.services.slice(0, 3).map((service) => (
                       <div
                         key={service.service}
                         style={{
