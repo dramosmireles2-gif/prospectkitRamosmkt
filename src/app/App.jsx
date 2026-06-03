@@ -26,6 +26,8 @@ import { DashboardScreen } from "../screens/DashboardScreen";
 import { DetailScreen } from "../screens/DetailScreen";
 import { KitScreen } from "../screens/KitScreen";
 import { PipelineScreen } from "../screens/PipelineScreen";
+import { ROIScreen } from "../screens/ROIScreen";
+import { AttackPlanScreen } from "../screens/AttackPlanScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
 
@@ -393,6 +395,7 @@ function AppContent() {
         onRegenerateAnalysis={() => handleRegenerateAnalysis(selectedProspect)}
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
         onOpenAssets={() => navigate(VIEWS.ASSETS)}
+        onOpenROI={() => navigate(VIEWS.ROI)}
       />
     );
   }
@@ -423,6 +426,27 @@ function AppContent() {
 
   if (view === VIEWS.ASSETS) {
     screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
+  }
+
+  if (view === VIEWS.ROI) {
+    screen = (
+      <ROIScreen
+        prospect={selectedProspect}
+        onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
+      />
+    );
+  }
+
+  if (view === VIEWS.ATTACK) {
+    screen = (
+      <AttackPlanScreen
+        prospects={prospects}
+        onSelectProspect={(prospect) => {
+          setSelectedProspectId(prospect.id);
+          setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+        }}
+      />
+    );
   }
 
   return (

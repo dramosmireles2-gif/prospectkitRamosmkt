@@ -20,7 +20,7 @@ function printAnalysis() {
   setTimeout(() => style.remove(), 2000);
 }
 
-export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets }) {
+export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets, onOpenROI }) {
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Necesitas abrir un prospecto para revisar o generar análisis." />;
   }
@@ -85,6 +85,9 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
         </Button>
         <Button variant="ghost" size="sm" onClick={printAnalysis} className="no-print">
           PDF
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onOpenROI} className="no-print">
+          Calcular ROI
         </Button>
         <Button variant="secondary" size="sm" onClick={onOpenAssets} className="no-print">
           Crear assets

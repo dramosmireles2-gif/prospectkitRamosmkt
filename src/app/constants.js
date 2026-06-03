@@ -11,13 +11,15 @@ export const VIEWS = {
   DASHBOARD: "dashboard",
   PROSPECTS: "prospects",
   PIPELINE: "pipeline",
+  ATTACK: "attack",
   DETAIL: "detail",
   ANALYSIS: "analysis",
   KIT: "kitgen",
-  ASSETS: "assets"
+  ASSETS: "assets",
+  ROI: "roi"
 };
 
-export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS];
+export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS, VIEWS.ROI];
 
 export const PIPELINE_STAGES = [
   { id: "lead",        label: "Lead",             color: "#777777", bg: "rgba(119,119,119,0.1)"  },

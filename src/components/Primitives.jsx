@@ -275,17 +275,19 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
 
 export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut }) {
   const navigation = [
-    { id: "dashboard", label: "Dashboard", icon: "▦" },
-    { id: "prospects", label: "Prospectos", icon: "◉" },
-    { id: "pipeline",  label: "Pipeline",   icon: "⬦" }
+    { id: "dashboard", label: "Dashboard",     icon: "▦" },
+    { id: "prospects", label: "Prospectos",    icon: "◉" },
+    { id: "pipeline",  label: "Pipeline",      icon: "⬦" },
+    { id: "attack",    label: "Plan de Ataque",icon: "⚡" }
   ];
 
   const prospectNav = prospect
     ? [
-        { id: "detail", label: "Ficha", icon: "□" },
+        { id: "detail",   label: "Ficha",    icon: "□" },
         { id: "analysis", label: "Análisis", icon: opportunityConfig.web.icon },
-        { id: "kitgen", label: "Kit", icon: "✦" },
-        { id: "assets", label: "Assets", icon: "▣" }
+        { id: "roi",      label: "ROI",      icon: "₿" },
+        { id: "kitgen",   label: "Kit",      icon: "✦" },
+        { id: "assets",   label: "Assets",   icon: "▣" }
       ]
     : [];
 
