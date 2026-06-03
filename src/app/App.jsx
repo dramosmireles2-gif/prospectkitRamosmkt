@@ -317,6 +317,15 @@ function AppContent() {
     }
   }
 
+  // Map proposal status → pipeline stage (only advance, never go back)
+  const PROPOSAL_STAGE_MAP = {
+    enviada:     "propuesta",
+    negociacion: "negociacion",
+    aceptada:    "ganado",
+    rechazada:   "perdido"
+  };
+  const STAGE_ORDER = ["lead","contactado","respondio","reunion","propuesta","negociacion","ganado","perdido"];
+
   async function handleSaveProposal(payload) {
     if (!selectedProspect || !workspace) return;
     setSavingProposal(true);
@@ -327,7 +336,22 @@ function AppContent() {
         const without = prev.filter((p) => p.id !== saved.id);
         return [...without, saved].sort((a, b) => b.version - a.version);
       });
-      setToast({ tone: "success", message: payload.isNewVersion ? `Propuesta v${saved.version} guardada.` : "Propuesta actualizada." });
+
+      // Auto-advance pipeline stage based on proposal status
+      const targetStage = PROPOSAL_STAGE_MAP[payload.status];
+      if (targetStage) {
+        const currentIdx = STAGE_ORDER.indexOf(selectedProspect.pipelineStage || "lead");
+        const targetIdx  = STAGE_ORDER.indexOf(targetStage);
+        if (targetIdx > currentIdx) {
+          const updated = await updatePipelineStage(selectedProspect.id, targetStage);
+          upsertProspect(updated);
+          setToast({ tone: "success", message: `Propuesta guardada · Pipeline avanzó a "${targetStage}".` });
+        } else {
+          setToast({ tone: "success", message: payload.isNewVersion ? `Propuesta v${saved.version} guardada.` : "Propuesta actualizada." });
+        }
+      } else {
+        setToast({ tone: "success", message: payload.isNewVersion ? `Propuesta v${saved.version} guardada.` : "Propuesta actualizada." });
+      }
     } catch (error) {
       setToast({ tone: "error", message: error.message || "No se pudo guardar la propuesta." });
     } finally {
