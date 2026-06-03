@@ -43,10 +43,13 @@ export async function signUpWithPassword({ fullName, email, password }) {
 }
 
 export async function signOutCurrentUser() {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    throw error;
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // ignore errors — clear session regardless
   }
+  localStorage.clear();
+  window.location.reload();
 }
 
 export async function getProfile(userId) {
