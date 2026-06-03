@@ -18,31 +18,37 @@ export function AuthProvider({ children }) {
 
     let isMounted = true;
 
-    async function bootstrap() {
-      const {
-        data: { session: currentSession }
-      } = await supabase.auth.getSession();
-
-      if (!isMounted) {
-        return;
-      }
-
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        try {
-          const nextProfile = await getProfile(currentSession.user.id);
-          if (isMounted) {
-            setProfile(nextProfile);
-          }
-        } catch (error) {
-          console.error("Error loading profile", error);
-        }
-      }
-
+    const timeoutId = setTimeout(() => {
       if (isMounted) {
+        console.error("Auth bootstrap timeout — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
         setLoading(false);
+      }
+    }, 8000);
+
+    async function bootstrap() {
+      try {
+        const {
+          data: { session: currentSession }
+        } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          try {
+            const nextProfile = await getProfile(currentSession.user.id);
+            if (isMounted) setProfile(nextProfile);
+          } catch (error) {
+            console.error("Error loading profile", error);
+          }
+        }
+      } catch (error) {
+        console.error("Auth bootstrap failed", error);
+      } finally {
+        clearTimeout(timeoutId);
+        if (isMounted) setLoading(false);
       }
     }
 
@@ -71,6 +77,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
