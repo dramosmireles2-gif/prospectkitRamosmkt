@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const RETENTION = {
   optimista:  { label: "Optimista",  color: theme.accent,  monthly: 0.97, bonus: 1.15 },
@@ -46,6 +47,7 @@ function getActiveProposal(proposals) {
 }
 
 export function LTVScreen({ prospect, proposals, onBack }) {
+  const isMobile = useIsMobile();
   const [scenario, setScenario] = useState("realista");
 
   if (!prospect) {
@@ -65,7 +67,7 @@ export function LTVScreen({ prospect, proposals, onBack }) {
   if (!monthly) {
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg }}>
+        <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2 }}>{prospect.name}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Valor de Cliente (LTV)</div>
@@ -95,7 +97,7 @@ export function LTVScreen({ prospect, proposals, onBack }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
+      <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Valor de Cliente (LTV)</div>
@@ -103,7 +105,7 @@ export function LTVScreen({ prospect, proposals, onBack }) {
         <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Source banner */}
         {activeProposal && proposalMonthly > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
@@ -112,7 +114,7 @@ export function LTVScreen({ prospect, proposals, onBack }) {
           </div>
         )}
         {/* Scenario selector */}
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {Object.entries(RETENTION).map(([key, cfg]) => (
             <button
               key={key}
@@ -128,13 +130,13 @@ export function LTVScreen({ prospect, proposals, onBack }) {
               <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.7 }}>{Math.round(ret.monthly * 100)}% ret./mes</span>
             </button>
           ))}
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", fontSize: 11, color: theme.dim }}>
+          <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", alignItems: "center", fontSize: 11, color: theme.dim, width: isMobile ? "100%" : "auto" }}>
             Base mensual: <strong style={{ color: theme.text, marginLeft: 5 }}>{formatCurrency(monthly)}</strong>
           </div>
         </div>
 
         {/* Hero metric */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
           {[
             { label: "LTV 3 meses",  value: ltv3,  sub: "trimestre" },
             { label: "LTV 6 meses",  value: ltv6,  sub: "semestre" },

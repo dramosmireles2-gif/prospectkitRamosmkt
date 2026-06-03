@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const templates = [
   { id: "score-card",     label: "Score Card",          desc: "Oportunidad detectada · Landscape" },
@@ -169,7 +170,7 @@ function AssetTemplate({ id, prospect, format }) {
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 20 }}>Detectamos una oportunidad en</div>
             <div style={{ fontSize: isStory ? 64 : 50, fontWeight: 900, color: "#f0f0f0", letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: 12 }}>{prospect.name}</div>
             <div style={{ fontSize: 17, color: "rgba(255,255,255,0.45)", marginBottom: 40 }}>{prospect.industry} · {prospect.city}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 28, marginBottom: 36, flexDirection: isStory ? "column" : "row", alignItems: isStory ? "flex-start" : "center" }}>
+            <div style={{ display: "flex", gap: 28, marginBottom: 36, flexDirection: isStory ? "column" : "row", alignItems: isStory ? "flex-start" : "center" }}>
               <div>
                 <div style={{ fontSize: isStory ? 96 : 68, fontWeight: 900, color, letterSpacing: "-0.05em", lineHeight: 1 }}>{score}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.09em" }}>Score de oportunidad</div>
@@ -256,6 +257,7 @@ function AssetTemplate({ id, prospect, format }) {
 }
 
 export function AssetsScreen({ prospect }) {
+  const isMobile = useIsMobile();
   const [templateId, setTemplateId] = useState("score-card");
   const [formatId, setFormatId] = useState("landscape");
   const [downloading, setDownloading] = useState(false);
@@ -305,11 +307,12 @@ export function AssetsScreen({ prospect }) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div
         style={{
-          height: 58,
+          minHeight: isMobile ? 84 : 58,
           borderBottom: `1px solid ${theme.border}`,
           display: "flex",
-          alignItems: "center",
-          padding: "0 28px",
+          alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          padding: isMobile ? "12px 16px" : "0 28px",
           gap: 16,
           background: theme.bg
         }}
@@ -323,9 +326,9 @@ export function AssetsScreen({ prospect }) {
         <Button variant="primary" size="sm" onClick={() => download("jpg")} disabled={downloading}>JPG</Button>
       </div>
 
-      <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: "220px 1fr" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr" }}>
         {/* Sidebar */}
-        <div style={{ borderRight: `1px solid ${theme.border}`, padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ borderRight: isMobile ? "none" : `1px solid ${theme.border}`, borderBottom: isMobile ? `1px solid ${theme.border}` : "none", padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6, padding: "0 4px" }}>
             Plantillas
           </div>
@@ -374,7 +377,7 @@ export function AssetsScreen({ prospect }) {
 
         {/* Preview area */}
         <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#060606", padding: 28 }}>
+          <div style={{ flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#060606", padding: isMobile ? 16 : 28 }}>
             <div style={{ position: "relative" }}>
               <div style={{ width: previewW, height: previewH, overflow: "hidden", borderRadius: 10, boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)" }}>
                 <div style={{ width: fmt.w, height: fmt.h, transform: `scale(${previewScale})`, transformOrigin: "top left" }}>
@@ -387,7 +390,7 @@ export function AssetsScreen({ prospect }) {
             </div>
           </div>
 
-          <div style={{ height: 66, borderTop: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 24px", gap: 12, background: theme.s1, flexShrink: 0 }}>
+          <div style={{ minHeight: isMobile ? 112 : 66, borderTop: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 24px", gap: 12, background: theme.s1, flexShrink: 0 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{templates.find((item) => item.id === templateId)?.label} · {fmt.label}</div>
               <div style={{ fontSize: 11, color: theme.muted }}>{downloading ? "Generando imagen..." : `${prospect.name} · ${fmt.w}×${fmt.h} px`}</div>

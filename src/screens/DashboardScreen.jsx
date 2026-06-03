@@ -21,6 +21,8 @@ function daysDiff(dateStr) {
 }
 
 export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView, onSelectProspect, onSeedDemo, loading }) {
+  const isMobile = useIsMobile();
+
   if (!prospects.length) {
     return (
       <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
@@ -104,11 +106,12 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div
         style={{
-          height: 58,
+          minHeight: isMobile ? 72 : 58,
           borderBottom: `1px solid ${theme.border}`,
           display: "flex",
-          alignItems: "center",
-          padding: "0 28px",
+          alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          padding: isMobile ? "12px 16px" : "0 28px",
           gap: 16,
           flexShrink: 0,
           background: theme.bg
@@ -122,10 +125,10 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
         </Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 18 }}>
 
         {/* === KPI ROW === */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
           {kpiCards.map((card) => (
             <div
               key={card.label}
@@ -235,7 +238,8 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                     }}
                     style={{
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: isMobile ? "flex-start" : "center",
+                      flexWrap: isMobile ? "wrap" : "nowrap",
                       gap: 12,
                       padding: "9px 12px",
                       borderRadius: 8,
@@ -251,7 +255,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                       </div>
                       <div style={{ fontSize: 11, color: theme.muted }}>{actionType?.label || prospect.nextActionType}</div>
                     </div>
-                    <div style={{ flexShrink: 0, textAlign: "right" }}>
+                    <div style={{ flexShrink: 0, textAlign: isMobile ? "left" : "right" }}>
                       {days === 0 ? (
                         <span style={{ fontSize: 11, fontWeight: 700, color: theme.yellow }}>Hoy</span>
                       ) : (
@@ -266,7 +270,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
         )}
 
         {/* === EXISTING CONTENT === */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 14 }}>
           <div
             style={{
               background: theme.s2,
@@ -306,7 +310,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
             />
 
             <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 14 : 0, marginBottom: 20 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, display: "inline-block" }} />
@@ -368,7 +372,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                 </div>
               ) : null}
 
-              <div style={{ display: "flex", gap: 10 }} onClick={(event) => event.stopPropagation()}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }} onClick={(event) => event.stopPropagation()}>
                 <Button
                   variant="primary"
                   size="sm"
@@ -458,7 +462,7 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
           <div style={{ fontSize: 12, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 10 }}>
             Acciones recomendadas
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 160 : 220}px,1fr))`, gap: 10 }}>
             {metrics.recommendations.map((item) => (
               <div
                 key={item.id}

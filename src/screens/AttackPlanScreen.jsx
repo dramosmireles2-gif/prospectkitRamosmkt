@@ -3,6 +3,7 @@ import { TemperatureBadge } from "../components/Primitives";
 import { NEXT_ACTION_TYPES, PIPELINE_STAGES } from "../app/constants";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const TEMP_WEIGHT = { urgente: 40, caliente: 30, tibio: 15, frio: 5 };
 const STAGE_WEIGHT = { lead: 4, contactado: 8, respondio: 14, reunion: 20, propuesta: 26, negociacion: 32, ganado: 0, perdido: 0 };
@@ -43,7 +44,7 @@ function ActionChip({ prospect }) {
   );
 }
 
-function ProspectRow({ prospect, rank, onSelect }) {
+function ProspectRow({ prospect, rank, onSelect, isMobile }) {
   const [hovered, setHovered] = useState(false);
   const score = priorityScore(prospect);
   const t = tier(score);
@@ -57,7 +58,8 @@ function ProspectRow({ prospect, rank, onSelect }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
         gap: 16,
         padding: "14px 20px",
         background: hovered ? theme.s3 : theme.s2,
@@ -107,7 +109,7 @@ function ProspectRow({ prospect, rank, onSelect }) {
   );
 }
 
-function TierSection({ tierId, prospects, onSelect }) {
+function TierSection({ tierId, prospects, onSelect, isMobile }) {
   const config = TIERS[tierId];
   if (!prospects.length) return null;
   return (
@@ -120,7 +122,7 @@ function TierSection({ tierId, prospects, onSelect }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {prospects.map((p, i) => (
-          <ProspectRow key={p.id} prospect={p} rank={i + 1} onSelect={onSelect} />
+          <ProspectRow key={p.id} prospect={p} rank={i + 1} onSelect={onSelect} isMobile={isMobile} />
         ))}
       </div>
     </div>
@@ -128,6 +130,7 @@ function TierSection({ tierId, prospects, onSelect }) {
 }
 
 export function AttackPlanScreen({ prospects, onSelectProspect }) {
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState("all");
 
   const active = prospects.filter((p) => !["ganado", "perdido"].includes(p.pipelineStage));
@@ -150,13 +153,13 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "20px 24px 12px", borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
+      <div style={{ padding: isMobile ? "16px 16px 12px" : "20px 24px 12px", borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
         <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>CRM</div>
         <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, letterSpacing: "-0.02em" }}>Plan de Ataque</div>
       </div>
 
       {/* Metrics */}
-      <div style={{ display: "flex", gap: 10, padding: "14px 24px 0", flexWrap: "wrap", flexShrink: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(110px, max-content))", gap: 10, padding: isMobile ? "14px 16px 0" : "14px 24px 0", flexShrink: 0 }}>
         {[
           { label: "Actuar hoy",     value: today.length,     color: theme.red    },
           { label: "Esta semana",    value: week.length,      color: theme.yellow },
@@ -172,7 +175,7 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 6, padding: "12px 24px", flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 6, padding: isMobile ? "12px 16px" : "12px 24px", flexShrink: 0, flexWrap: "wrap" }}>
         {[
           { id: "all",       label: "Todos activos" },
           { id: "overdue",   label: `Vencidos (${overdueCount})` },
@@ -190,16 +193,16 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
       </div>
 
       {/* List */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "0 16px 24px" : "0 24px 24px", display: "flex", flexDirection: "column", gap: 24 }}>
         {ranked.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: theme.muted, fontSize: 14 }}>
             No hay prospectos activos con este filtro.
           </div>
         ) : (
           <>
-            <TierSection tierId="today" prospects={today} onSelect={(p) => onSelectProspect(p)} />
-            <TierSection tierId="week"  prospects={week}  onSelect={(p) => onSelectProspect(p)} />
-            <TierSection tierId="radar" prospects={radar} onSelect={(p) => onSelectProspect(p)} />
+            <TierSection tierId="today" prospects={today} onSelect={(p) => onSelectProspect(p)} isMobile={isMobile} />
+            <TierSection tierId="week"  prospects={week}  onSelect={(p) => onSelectProspect(p)} isMobile={isMobile} />
+            <TierSection tierId="radar" prospects={radar} onSelect={(p) => onSelectProspect(p)} isMobile={isMobile} />
           </>
         )}
       </div>

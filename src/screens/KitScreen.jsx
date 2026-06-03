@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const steps = [
   "Analizando presencia digital...",
@@ -27,6 +28,7 @@ function SpinnerIcon() {
 }
 
 export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAssets }) {
+  const isMobile = useIsMobile();
   const [phase, setPhase] = useState(prospect?.kit ? "done" : "idle");
   const [step, setStep] = useState(0);
   const [tab, setTab] = useState("messages");
@@ -130,11 +132,12 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div
         style={{
-          height: 58,
+          minHeight: isMobile ? 84 : 58,
           borderBottom: `1px solid ${theme.border}`,
           display: "flex",
-          alignItems: "center",
-          padding: "0 28px",
+          alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          padding: isMobile ? "12px 16px" : "0 28px",
           gap: 16,
           background: theme.bg
         }}
@@ -155,9 +158,9 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         ) : null}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 28 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 28 }}>
         {phase === "idle" ? (
-          <div style={{ maxWidth: 540, margin: "0 auto", paddingTop: 48, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
+          <div style={{ maxWidth: 540, margin: "0 auto", paddingTop: isMobile ? 24 : 48, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: theme.accentBg, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
               ✦
             </div>
@@ -167,7 +170,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                 Guardará mensajes por canal y una propuesta before/after basada en el análisis heurístico de <strong style={{ color: theme.text }}>{prospect.name}</strong>.
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, width: "100%", maxWidth: 400, textAlign: "left" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 9, width: "100%", maxWidth: 400, textAlign: "left" }}>
               {["Mensaje de WhatsApp", "Instagram DM", "Facebook DM", "Email profesional", "Propuesta before/after", "Snapshot persistido"].map((item) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: theme.s2, borderRadius: 8, border: `1px solid ${theme.border}`, fontSize: 12, color: theme.muted }}>
                   <span style={{ color: theme.accent, fontWeight: 700, flexShrink: 0 }}>✓</span> {item}
@@ -206,7 +209,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
 
         {phase === "done" && prospect.kit ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ padding: "14px 20px", background: theme.accentBg, border: `1px solid ${theme.accentBorder}`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "14px 20px", background: theme.accentBg, border: `1px solid ${theme.accentBorder}`, borderRadius: 10, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ color: theme.accent, fontSize: 18 }}>✓</span>
                 <div>
@@ -219,7 +222,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
               </Button>
             </div>
 
-            <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${theme.border}` }}>
+            <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${theme.border}`, overflowX: "auto" }}>
               {[
                 { id: "messages", label: "Mensajes de contacto" },
                 { id: "proposal", label: "Propuesta before/after" }
@@ -249,13 +252,13 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                   const currentText = getCurrentText(message.id, message.text);
                   return (
                     <Card key={message.id} style={{ padding: 20 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: 10, marginBottom: 12 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: 16 }}>{message.icon}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
                         </div>
-                        <div style={{ display: "flex", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                           {message.id === "whatsapp" && prospect.whatsapp ? (
                             <a
                               href={getWhatsAppUrl(currentText)}
@@ -312,7 +315,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
             {tab === "proposal" ? (
               <Card style={{ padding: 24 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 18 }}>Propuesta before / after — {prospect.name}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
                   <div style={{ padding: 18, background: theme.redBg, borderRadius: 10, border: "1px solid rgba(255,68,85,0.2)" }}>
                     <div style={{ fontSize: 11, color: theme.red, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Situación actual</div>
                     {proposal.before.map((item) => (

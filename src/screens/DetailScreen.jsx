@@ -3,6 +3,7 @@ import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, LikelihoodBar, T
 import { theme } from "../app/theme";
 import { formatDateLabel, formatRelativeTime } from "../utils/format";
 import { NEXT_ACTION_TYPES } from "../app/constants";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function SocialRow({ icon, label, value }) {
   return (
@@ -30,6 +31,7 @@ function SocialRow({ icon, label, value }) {
 }
 
 export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, onUpdateNextAction, busy }) {
+  const isMobile = useIsMobile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [draftNotes, setDraftNotes] = useState("");
@@ -58,11 +60,12 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div
         style={{
-          height: 58,
+          minHeight: isMobile ? 78 : 58,
           borderBottom: `1px solid ${theme.border}`,
           display: "flex",
-          alignItems: "center",
-          padding: "0 28px",
+          alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          padding: isMobile ? "12px 16px" : "0 28px",
           gap: 16,
           flexShrink: 0,
           background: theme.bg
@@ -82,15 +85,16 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
         </Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 16 }}>
         <div
           style={{
             background: `linear-gradient(135deg, ${theme.s2} 0%, rgba(0,255,136,0.03) 100%)`,
             border: `1px solid ${theme.border}`,
             borderRadius: 12,
-            padding: "22px 26px",
+            padding: isMobile ? "18px" : "22px 26px",
             display: "flex",
-            alignItems: "center",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "flex-start" : "center",
             gap: 20
           }}
         >
@@ -124,7 +128,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
               <span style={{ fontSize: 12, color: theme.muted }}>{formatDateLabel(prospect.createdAt)}</span>
             </div>
           </div>
-          <div style={{ textAlign: "center", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, minWidth: 120 }}>
+          <div style={{ textAlign: isMobile ? "left" : "center", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, minWidth: isMobile ? 0 : 120, width: isMobile ? "100%" : "auto" }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 40, fontWeight: 900, color: scoreColor, letterSpacing: "-0.03em", lineHeight: 1 }}>{prospect.opportunityScore}</div>
               <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 2 }}>Oportunidad</div>
@@ -133,7 +137,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
           <Card style={{ padding: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
               Presencia digital
@@ -173,7 +177,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
                 </div>
               )}
             </Card>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
               {[
                 { label: "Última actividad", value: formatRelativeTime(prospect.lastActivityAt) },
                 { label: "Creado", value: formatDateLabel(prospect.createdAt) }
@@ -213,7 +217,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
               <input type="date" value={draftActionDate} onChange={e => setDraftActionDate(e.target.value)} style={{ background: theme.s3, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "9px 12px", color: theme.text, fontSize: 13, outline: "none" }} />
             </div>
           ) : prospect.nextActionType ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: `${actionColor}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                 {actionConfig?.icon || "📋"}
               </div>
@@ -230,7 +234,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
           )}
         </Card>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
           <Card onClick={() => onOpenView("analysis")}>
             <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, marginBottom: 6 }}>Análisis</div>
             <div style={{ fontSize: 11, color: theme.muted }}>{prospect.analysis ? prospect.analysis.scoreLabel : "Sin análisis aún"}</div>

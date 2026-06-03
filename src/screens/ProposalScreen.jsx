@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 // type: "unico" | "mensual" | "setup+mensual"
 // price = pago único o mensual; setupPrice = cargo inicial cuando type === "setup+mensual"
@@ -85,7 +86,7 @@ function draftFromProposal(p) {
   };
 }
 
-function ServiceRow({ svc, onPriceChange, onSetupPriceChange, onRemove }) {
+function ServiceRow({ svc, onPriceChange, onSetupPriceChange, onRemove, isMobile }) {
   const typeCfg = TYPE_LABEL[svc.type] || TYPE_LABEL.mensual;
   const isSetup = svc.type === "setup+mensual";
   const isUnico = svc.type === "unico";
@@ -100,7 +101,7 @@ function ServiceRow({ svc, onPriceChange, onSetupPriceChange, onRemove }) {
   return (
     <div style={{ background: theme.s3, borderRadius: 10, border: `1px solid ${theme.border}`, overflow: "hidden" }}>
       {/* Top row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px" }}>
+      <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: 14, padding: "12px 16px" }}>
         <span style={{ fontSize: 20, flexShrink: 0 }}>{svc.icon}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{svc.service}</div>
@@ -180,6 +181,7 @@ function VersionBadge({ version, status, date, isActive, onClick }) {
 }
 
 export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) {
+  const isMobile = useIsMobile();
   const sorted = [...(proposals || [])].sort((a, b) => b.version - a.version);
   const latest = sorted[0] || null;
 
@@ -267,7 +269,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
+      <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Propuesta activa</div>
@@ -275,9 +277,9 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
         <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
       </div>
 
-      <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: "180px 1fr" }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "180px 1fr" }}>
         {/* Version sidebar */}
-        <div style={{ borderRight: `1px solid ${theme.border}`, padding: 14, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ borderRight: isMobile ? "none" : `1px solid ${theme.border}`, borderBottom: isMobile ? `1px solid ${theme.border}` : "none", padding: 14, overflowY: "auto", display: "flex", flexDirection: isMobile ? "row" : "column", flexWrap: "wrap", gap: 8 }}>
           <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Versiones</div>
           <div
             onClick={() => { setActiveVersionId(null); setDraft(prospect?.analysis ? draftFromAnalysis(prospect.analysis) : emptyDraft()); }}
@@ -295,7 +297,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
         </div>
 
         {/* Editor */}
-        <div style={{ overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 18 }}>
 
           {/* Status */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -312,7 +314,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
           </div>
 
           {/* Totals */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
             {/* Pago inicial */}
             <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "12px 16px" }}>
               <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Pago inicial</div>
@@ -377,7 +379,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {draft.services.map((s) => (
-                  <ServiceRow key={s.id} svc={s} onPriceChange={updatePrice} onSetupPriceChange={updateSetupPrice} onRemove={removeService} />
+                  <ServiceRow key={s.id} svc={s} onPriceChange={updatePrice} onSetupPriceChange={updateSetupPrice} onRemove={removeService} isMobile={isMobile} />
                 ))}
               </div>
             )}
@@ -396,7 +398,7 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
           </div>
 
           {/* Save actions */}
-          <div style={{ display: "flex", gap: 10, paddingBottom: 8 }}>
+          <div style={{ display: "flex", gap: 10, paddingBottom: 8, flexWrap: "wrap" }}>
             {activeVersionId !== null && isDirty && (
               <Button variant="secondary" onClick={() => handleSave(false)} disabled={saving || draft.services.length === 0}>
                 {saving ? "Guardando..." : "Actualizar v" + (sorted.find((p) => p.id === activeVersionId)?.version || "")}

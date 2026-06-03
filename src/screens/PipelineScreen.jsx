@@ -3,6 +3,7 @@ import { TemperatureBadge } from "../components/Primitives";
 import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function scoreColor(s) {
   if (s >= 80) return theme.accent;
@@ -11,12 +12,12 @@ function scoreColor(s) {
   return theme.muted;
 }
 
-function PipelineCard({ prospect, onSelect, onDragStart }) {
+function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      draggable
+      draggable={!isMobile}
       onDragStart={(e) => onDragStart(e, prospect.id)}
       onClick={() => onSelect(prospect)}
       onMouseEnter={() => setHovered(true)}
@@ -26,7 +27,7 @@ function PipelineCard({ prospect, onSelect, onDragStart }) {
         border: `1px solid ${hovered ? theme.borderStrong : theme.border}`,
         borderRadius: 10,
         padding: "12px 14px",
-        cursor: "grab",
+        cursor: isMobile ? "pointer" : "grab",
         transition: "all 0.15s ease",
         display: "flex",
         flexDirection: "column",
@@ -86,23 +87,36 @@ function PipelineCard({ prospect, onSelect, onDragStart }) {
           </div>
         );
       })() : null}
+
+      {isMobile ? (
+        <select
+          value={prospect.pipelineStage || "lead"}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => onUpdateStage(prospect.id, event.target.value)}
+          style={{ background: theme.s3, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "8px 10px", color: theme.text, fontSize: 12, outline: "none" }}
+        >
+          {PIPELINE_STAGES.map((stage) => (
+            <option key={stage.id} value={stage.id}>{stage.label}</option>
+          ))}
+        </select>
+      ) : null}
     </div>
   );
 }
 
-function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDragStart, isDragOver }) {
+function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage }) {
   const totalRevenue = prospects.reduce((sum, p) => sum + (p.analysis?.revenue?.min || 0), 0);
 
   return (
     <div
-      onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, stage.id)}
+      onDragOver={isMobile ? undefined : onDragOver}
+      onDrop={isMobile ? undefined : (e) => onDrop(e, stage.id)}
       style={{
         display: "flex",
         flexDirection: "column",
         gap: 0,
-        minWidth: 220,
-        maxWidth: 240,
+        minWidth: isMobile ? "100%" : 220,
+        maxWidth: isMobile ? "100%" : 240,
         flexShrink: 0,
         background: isDragOver ? `${stage.bg}` : "transparent",
         borderRadius: 12,
@@ -140,6 +154,8 @@ function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDrag
             prospect={p}
             onSelect={onSelect}
             onDragStart={onDragStart}
+            onUpdateStage={onUpdateStage}
+            isMobile={isMobile}
           />
         ))}
         {prospects.length === 0 && (
@@ -190,6 +206,7 @@ function PipelineMetrics({ prospects }) {
 }
 
 export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
+  const isMobile = useIsMobile();
   const [dragOverStage, setDragOverStage] = useState(null);
   const dragProspectId = useRef(null);
 
@@ -228,7 +245,7 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "20px 24px 12px", borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
+      <div style={{ padding: isMobile ? "16px 16px 12px" : "20px 24px 12px", borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
         <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>CRM</div>
         <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, letterSpacing: "-0.02em" }}>Pipeline</div>
       </div>
@@ -242,10 +259,11 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
       <div
         style={{
           flex: 1,
-          overflowX: "auto",
-          overflowY: "hidden",
-          padding: "0 24px 24px",
+          overflowX: isMobile ? "hidden" : "auto",
+          overflowY: isMobile ? "auto" : "hidden",
+          padding: isMobile ? "0 16px 24px" : "0 24px 24px",
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           gap: 10,
           alignItems: "flex-start"
         }}
@@ -260,6 +278,8 @@ export function PipelineScreen({ prospects, onUpdateStage, onSelectProspect }) {
             onDrop={handleDrop}
             onSelect={(p) => { onSelectProspect(p); }}
             onDragStart={handleDragStart}
+            isMobile={isMobile}
+            onUpdateStage={onUpdateStage}
           />
         ))}
       </div>

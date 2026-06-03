@@ -1,6 +1,7 @@
 import { Button, Card, EmptyState, LikelihoodBar, ScoreRing, Tag, TemperatureBadge } from "../components/Primitives";
 import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function printAnalysis() {
   const styleId = "prospect-print-style";
@@ -21,6 +22,8 @@ function printAnalysis() {
 }
 
 export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onOpenAssets, onOpenROI, onOpenLTV, onOpenGap }) {
+  const isMobile = useIsMobile();
+
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="Necesitas abrir un prospecto para revisar o generar análisis." />;
   }
@@ -33,14 +36,14 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div
-          style={{
-            height: 58,
-            borderBottom: `1px solid ${theme.border}`,
-            display: "flex",
-            alignItems: "center",
-            padding: "0 28px",
-            background: theme.bg
-          }}
+        style={{
+          minHeight: isMobile ? 72 : 58,
+          borderBottom: `1px solid ${theme.border}`,
+          display: "flex",
+          alignItems: isMobile ? "flex-start" : "center",
+          padding: isMobile ? "12px 16px" : "0 28px",
+          background: theme.bg
+        }}
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
@@ -67,11 +70,12 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
       <div
         className="no-print"
         style={{
-          height: 58,
+          minHeight: isMobile ? 84 : 58,
           borderBottom: `1px solid ${theme.border}`,
           display: "flex",
-          alignItems: "center",
-          padding: "0 28px",
+          alignItems: isMobile ? "flex-start" : "center",
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          padding: isMobile ? "12px 16px" : "0 28px",
           gap: 16,
           background: theme.bg
         }}
@@ -95,8 +99,8 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
         </Button>
       </div>
 
-      <div id="analysis-print-target" style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 14 }}>
+      <div id="analysis-print-target" style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "180px 1fr", gap: 14 }}>
           <Card style={{ padding: 22, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
             <ScoreRing value={analysis.opportunityScore} size={90} />
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{analysis.scoreLabel}</div>
@@ -183,11 +187,11 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
                   {service.icon}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginBottom: 3 }}>{service.service}</div>
                   <div style={{ fontSize: 12, color: theme.muted }}>{service.desc}</div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ textAlign: isMobile ? "left" : "right", flexShrink: 0 }}>
                   <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Confianza</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: service.confidence >= 90 ? theme.accent : theme.yellow }}>{service.confidence}%</div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: theme.accent }}>{formatCurrency(service.revenue)}</div>
@@ -197,7 +201,7 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
           <Card style={{ padding: 20, background: `linear-gradient(135deg, ${theme.s2} 0%, rgba(0,255,136,0.04) 100%)`, border: `1px solid ${theme.accentBorder}` }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>
               Potencial de ingresos
@@ -225,7 +229,7 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
 
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 12 }}>Oportunidades detectadas</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${isMobile ? 180 : 240}px,1fr))`, gap: 10 }}>
             {analysis.opportunities.map((opportunity) => {
               const config = opportunityConfig[opportunity.type] || { icon: "◎", color: theme.blue };
               return (
@@ -256,7 +260,7 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 12 }}>Plan de acción</div>
           <Card style={{ padding: 0, overflow: "hidden" }}>
             {analysis.actionPlan.map((row, index) => (
-              <div key={row.action} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 20px", borderBottom: index < analysis.actionPlan.length - 1 ? `1px solid ${theme.border}` : "none" }}>
+              <div key={row.action} style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: 14, padding: "13px 20px", borderBottom: index < analysis.actionPlan.length - 1 ? `1px solid ${theme.border}` : "none" }}>
                 <div style={{ width: 22, height: 22, borderRadius: "50%", background: theme.s3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: theme.muted, flexShrink: 0 }}>
                   {index + 1}
                 </div>

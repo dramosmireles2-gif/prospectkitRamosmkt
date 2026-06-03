@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { opportunityConfig, statusConfig, theme } from "../app/theme";
 import { getInitials } from "../utils/format";
 import { TEMPERATURE_CONFIG, LIKELIHOOD_CONFIG } from "../services/heuristics";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 export function Badge({ status }) {
   const config = statusConfig[status] || { label: status, color: "#666666", bg: "rgba(100,100,100,0.1)" };
@@ -140,14 +141,17 @@ export function Button({ variant = "primary", size = "md", children, onClick, di
 }
 
 export function TopBar({ title, crumb, actions }) {
+  const isMobile = useIsMobile();
+
   return (
     <div
       style={{
-        height: 58,
+        minHeight: isMobile ? 72 : 58,
         borderBottom: `1px solid ${theme.border}`,
         display: "flex",
-        alignItems: "center",
-        padding: "0 28px",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexWrap: isMobile ? "wrap" : "nowrap",
+        padding: isMobile ? "12px 16px" : "0 28px",
         gap: 16,
         flexShrink: 0,
         background: theme.bg
@@ -159,7 +163,7 @@ export function TopBar({ title, crumb, actions }) {
         ) : null}
         <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, letterSpacing: "-0.01em" }}>{title}</div>
       </div>
-      {actions ? <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{actions}</div> : null}
+      {actions ? <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>{actions}</div> : null}
     </div>
   );
 }
@@ -518,6 +522,8 @@ export function Field({ label, value, onChange, placeholder, textarea, rows = 4,
 }
 
 export function ModalFrame({ title, description, onClose, children }) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "Escape") onClose();
@@ -537,9 +543,10 @@ export function ModalFrame({ title, description, onClose, children }) {
         background: "rgba(0,0,0,0.75)",
         backdropFilter: "blur(6px)",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
-        zIndex: 1000
+        zIndex: 1000,
+        padding: isMobile ? 12 : 20
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
@@ -551,16 +558,17 @@ export function ModalFrame({ title, description, onClose, children }) {
         style={{
           background: theme.s2,
           border: `1px solid ${theme.borderStrong}`,
-          borderRadius: 14,
-          width: 520,
-          maxHeight: "90vh",
+          borderRadius: isMobile ? 18 : 14,
+          width: isMobile ? "100%" : 520,
+          maxWidth: "100%",
+          maxHeight: isMobile ? "88vh" : "90vh",
           overflowY: "auto",
           boxShadow: "0 32px 80px rgba(0,0,0,0.7)"
         }}
       >
         <div
           style={{
-            padding: "20px 24px",
+            padding: isMobile ? "18px" : "20px 24px",
             borderBottom: `1px solid ${theme.border}`,
             display: "flex",
             justifyContent: "space-between",
@@ -575,13 +583,15 @@ export function ModalFrame({ title, description, onClose, children }) {
             ×
           </button>
         </div>
-        <div style={{ padding: 24 }}>{children}</div>
+        <div style={{ padding: isMobile ? 18 : 24 }}>{children}</div>
       </div>
     </div>
   );
 }
 
 export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onConfirm, onCancel }) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "Escape") onCancel();
@@ -598,9 +608,10 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onCo
         background: "rgba(0,0,0,0.75)",
         backdropFilter: "blur(6px)",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
-        zIndex: 1100
+        zIndex: 1100,
+        padding: isMobile ? 12 : 20
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) onCancel();
@@ -610,15 +621,16 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onCo
         style={{
           background: theme.s2,
           border: `1px solid ${theme.borderStrong}`,
-          borderRadius: 14,
-          padding: 24,
-          width: 380,
+          borderRadius: isMobile ? 18 : 14,
+          padding: isMobile ? 18 : 24,
+          width: isMobile ? "100%" : 380,
+          maxWidth: "100%",
           boxShadow: "0 32px 80px rgba(0,0,0,0.7)"
         }}
       >
         <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, marginBottom: 8 }}>{title}</div>
         <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.6, marginBottom: 20 }}>{message}</div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: isMobile ? "wrap" : "nowrap" }}>
           <Button variant="secondary" size="sm" onClick={onCancel}>Cancelar</Button>
           <Button variant="danger" size="sm" onClick={onConfirm}>{confirmLabel}</Button>
         </div>
@@ -628,6 +640,8 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onCo
 }
 
 export function Toast({ tone = "success", message, onClose, duration = 3500 }) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(onClose, duration);
@@ -641,8 +655,9 @@ export function Toast({ tone = "success", message, onClose, duration = 3500 }) {
     <div
       style={{
         position: "fixed",
-        right: 20,
-        bottom: 20,
+        right: isMobile ? 12 : 20,
+        left: isMobile ? 12 : "auto",
+        bottom: isMobile ? 72 : 20,
         display: "flex",
         alignItems: "center",
         gap: 10,
@@ -651,7 +666,7 @@ export function Toast({ tone = "success", message, onClose, duration = 3500 }) {
         background: bg,
         border: `1px solid ${tone === "error" ? "rgba(255,68,85,0.25)" : theme.accentBorder}`,
         color,
-        minWidth: 260,
+        minWidth: isMobile ? "auto" : 260,
         zIndex: 1200,
         animation: "fadeIn 200ms ease"
       }}

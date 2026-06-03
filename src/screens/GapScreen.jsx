@@ -1,5 +1,6 @@
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const INDUSTRY_BENCHMARK = {
   restaurante:  { web: 72, mobile: 68, social: 80, conversion: 65, functionality: 58 },
@@ -88,6 +89,7 @@ function GapBar({ label, prospectVal, benchmarkVal }) {
 }
 
 export function GapScreen({ prospect, onBack }) {
+  const isMobile = useIsMobile();
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="El análisis de brecha necesita un prospecto activo." />;
   }
@@ -95,7 +97,7 @@ export function GapScreen({ prospect, onBack }) {
   if (!prospect.analysis) {
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg }}>
+        <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2 }}>{prospect.name}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Brecha Competitiva</div>
@@ -140,7 +142,7 @@ export function GapScreen({ prospect, onBack }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
+      <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Brecha Competitiva</div>
@@ -148,9 +150,9 @@ export function GapScreen({ prospect, onBack }) {
         <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
           <div style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "16px 18px" }}>
             <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Nivel vs industria</div>
             <div style={{ fontSize: 32, fontWeight: 900, color: overallPct >= 80 ? theme.accent : overallPct >= 60 ? theme.yellow : theme.red, letterSpacing: "-0.03em" }}>{overallPct}%</div>
@@ -179,7 +181,7 @@ export function GapScreen({ prospect, onBack }) {
         </Card>
 
         {/* Missing features */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
           <Card style={{ padding: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: theme.red, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
               Brechas críticas ({critical.length})

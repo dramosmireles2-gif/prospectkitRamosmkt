@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const CATALOG = [
   { id: "web",       service: "Landing Page",           icon: "🌐", revenue: 3500,  clientMultiplier: 4.5, desc: "Captación activa, más leads desde búsqueda local" },
@@ -38,6 +39,7 @@ function getActiveProposal(proposals) {
 }
 
 export function ROIScreen({ prospect, proposals, onBack }) {
+  const isMobile = useIsMobile();
   const activeProposal = getActiveProposal(proposals);
 
   // Build default selection and price overrides from active proposal when available
@@ -81,7 +83,7 @@ export function ROIScreen({ prospect, proposals, onBack }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ height: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
+      <div style={{ minHeight: isMobile ? 72 : 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: isMobile ? "flex-start" : "center", flexWrap: isMobile ? "wrap" : "nowrap", padding: isMobile ? "12px 16px" : "0 28px", gap: 16, background: theme.bg, flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Estimador de ROI</div>
@@ -89,7 +91,7 @@ export function ROIScreen({ prospect, proposals, onBack }) {
         <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Proposal banner */}
         {activeProposal && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
@@ -98,7 +100,7 @@ export function ROIScreen({ prospect, proposals, onBack }) {
           </div>
         )}
         {/* Summary cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
           {[
             { label: "RamosMKT cobra", value: formatCurrency(totalRmkt), sub: "/mes", color: theme.accent },
             { label: "Cliente gana est.", value: formatCurrency(totalClient), sub: "/mes", color: theme.yellow },
@@ -114,12 +116,12 @@ export function ROIScreen({ prospect, proposals, onBack }) {
         </div>
 
         {/* Annual projection */}
-        <div style={{ background: `linear-gradient(135deg, ${theme.s2} 0%, rgba(0,255,136,0.04) 100%)`, border: `1px solid ${theme.accentBorder}`, borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+        <div style={{ background: `linear-gradient(135deg, ${theme.s2} 0%, rgba(0,255,136,0.04) 100%)`, border: `1px solid ${theme.accentBorder}`, borderRadius: 12, padding: "20px 24px", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 24 }}>
           <div>
             <div style={{ fontSize: 11, color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 6 }}>Proyección anual</div>
             <div style={{ fontSize: 13, color: theme.muted }}>Con los servicios seleccionados activos 12 meses</div>
           </div>
-          <div style={{ display: "flex", gap: 32, flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: isMobile ? 18 : 32, flexShrink: 0, width: isMobile ? "100%" : "auto", flexDirection: isMobile ? "column" : "row" }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, color: theme.muted, marginBottom: 2 }}>Ingresos RamosMKT</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: theme.accent }}>{formatCurrency(annualRmkt)}</div>
@@ -147,7 +149,8 @@ export function ROIScreen({ prospect, proposals, onBack }) {
                   onClick={() => toggle(item.id)}
                   style={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    flexDirection: isMobile ? "column" : "row",
                     gap: 16,
                     padding: "16px 20px",
                     background: active ? theme.s3 : theme.s2,
