@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { getCurrentWorkspace } from "../services/workspace";
+import { supabase } from "../services/supabase";
 import { useAuth } from "./AuthContext";
 
 const WorkspaceContext = createContext(null);
@@ -26,9 +27,13 @@ export function WorkspaceProvider({ children }) {
       setLoading(false);
     }, 15000);
 
-    // Retry up to 3 times with 1.5s delay — handles cold starts and token refresh delays
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // Retry up to 4 times. On attempt 2, force a session refresh to fix expired tokens.
+    for (let attempt = 0; attempt < 4; attempt++) {
       try {
+        if (attempt === 2) {
+          // Force Supabase to refresh the JWT before retrying
+          await supabase.auth.refreshSession();
+        }
         const result = await getCurrentWorkspace(user.id);
         if (result?.workspace) {
           setWorkspace(result.workspace);
@@ -40,7 +45,7 @@ export function WorkspaceProvider({ children }) {
       } catch (error) {
         console.error(`Workspace load attempt ${attempt + 1} failed`, error);
       }
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1500));
     }
 
     setWorkspace(null);
