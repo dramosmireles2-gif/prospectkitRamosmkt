@@ -179,6 +179,8 @@ function AppContent() {
       upsertProspect(created);
       setView(VIEWS.DETAIL);
       setToast({ tone: "success", message: "Prospecto guardado en Supabase." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo guardar el prospecto." });
     } finally {
       setBusy("");
     }
