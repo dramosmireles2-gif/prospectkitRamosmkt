@@ -26,11 +26,36 @@ function payback(rmktRevenue, clientGain) {
   return `${months} mes${months !== 1 ? "es" : ""}`;
 }
 
-export function ROIScreen({ prospect, onBack }) {
+// Finds the latest non-rejected proposal (aceptada > negociacion > enviada > borrador)
+function getActiveProposal(proposals) {
+  if (!proposals?.length) return null;
+  const priority = ["aceptada", "negociacion", "enviada", "borrador"];
+  for (const status of priority) {
+    const found = proposals.find((p) => p.status === status);
+    if (found) return found;
+  }
+  return proposals[0];
+}
+
+export function ROIScreen({ prospect, proposals, onBack }) {
+  const activeProposal = getActiveProposal(proposals);
+
+  // Build default selection and price overrides from active proposal when available
+  const proposalMap = {};
+  if (activeProposal?.services?.length) {
+    for (const svc of activeProposal.services) {
+      if (svc.type === "mensual" || svc.type === "setup+mensual") {
+        proposalMap[svc.id] = svc.negotiatedPrice;
+      }
+    }
+  }
+
   const recommended = (prospect?.analysis?.recommendedServices || []).map((s) => s.service);
-  const defaultSelected = CATALOG
-    .filter((item) => recommended.some((r) => r.toLowerCase().includes(item.id) || item.service.toLowerCase().includes(r.toLowerCase().split(" ")[0])))
-    .map((item) => item.id);
+  const defaultSelected = activeProposal?.services?.length
+    ? activeProposal.services.map((s) => s.id)
+    : CATALOG
+        .filter((item) => recommended.some((r) => r.toLowerCase().includes(item.id) || item.service.toLowerCase().includes(r.toLowerCase().split(" ")[0])))
+        .map((item) => item.id);
 
   const [selected, setSelected] = useState(defaultSelected.length > 0 ? defaultSelected : ["web", "gmb"]);
 
@@ -42,7 +67,10 @@ export function ROIScreen({ prospect, onBack }) {
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }
 
-  const activeServices = CATALOG.filter((item) => selected.includes(item.id));
+  const activeServices = CATALOG.filter((item) => selected.includes(item.id)).map((item) => ({
+    ...item,
+    revenue: proposalMap[item.id] ?? item.revenue
+  }));
   const totalRmkt = activeServices.reduce((sum, s) => sum + s.revenue, 0);
   const totalClient = activeServices.reduce((sum, s) => sum + Math.round(s.revenue * s.clientMultiplier), 0);
   const roiPct = roi(totalRmkt, totalClient);
@@ -62,6 +90,13 @@ export function ROIScreen({ prospect, onBack }) {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Proposal banner */}
+        {activeProposal && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
+            <span style={{ fontSize: 16 }}>📄</span>
+            <span>Usando precios de <strong style={{ color: theme.accent }}>Propuesta v{activeProposal.version}</strong> ({activeProposal.status}) — los valores reflejan lo negociado, no el catálogo.</span>
+          </div>
+        )}
         {/* Summary cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
           {[
@@ -140,7 +175,13 @@ export function ROIScreen({ prospect, onBack }) {
                   <div style={{ display: "flex", gap: 24, flexShrink: 0 }}>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>RamosMKT</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.accent : theme.muted }}>{formatCurrency(item.revenue)}<span style={{ fontSize: 10, fontWeight: 400 }}>/mo</span></div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.accent : theme.muted }}>
+                    {formatCurrency(item.revenue)}
+                    {proposalMap[item.id] !== undefined && proposalMap[item.id] !== CATALOG.find(c=>c.id===item.id)?.revenue && (
+                      <span style={{ fontSize: 10, color: theme.yellow, marginLeft: 4 }}>negociado</span>
+                    )}
+                    <span style={{ fontSize: 10, fontWeight: 400 }}>/mo</span>
+                  </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Cliente gana est.</div>

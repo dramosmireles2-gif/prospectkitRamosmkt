@@ -463,6 +463,7 @@ function AppContent() {
     screen = (
       <ROIScreen
         prospect={selectedProspect}
+        proposals={proposals}
         onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
       />
     );
