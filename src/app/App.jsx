@@ -3,7 +3,18 @@ import { Sidebar, Toast, EmptyState, Button } from "../components/Primitives";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "../contexts/WorkspaceContext";
 import { canUse, FEATURES } from "../services/featureFlags";
-import { buildDashboardMetrics, createProspect, deleteProspect, ensureProspectAnalysis, ensureProspectKit, listProspects, regenerateProspectAnalysis, regenerateProspectKit, seedDemoWorkspace, updateProspect } from "../services/prospects";
+import {
+  buildDashboardMetrics,
+  createProspect,
+  deleteProspect,
+  ensureProspectAnalysis,
+  ensureProspectKit,
+  listProspects,
+  regenerateProspectAnalysis,
+  regenerateProspectKit,
+  seedDemoWorkspace,
+  updateProspect
+} from "../services/prospects";
 import { VIEWS, PROSPECT_VIEWS } from "./constants";
 import { theme } from "./theme";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
@@ -43,15 +54,15 @@ function WorkspaceReadyScreen({ onRetry, onSignOut }) {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: theme.bg }}>
       <div style={{ width: "min(620px, 100%)" }}>
         <EmptyState
-          title="La cuenta existe, pero el workspace aún no aparece"
-          description="Esto suele pasar cuando todavía no corriste el SQL de Supabase o cuando el trigger de alta no terminó de crear profile, workspace y membership."
+          title="La cuenta existe, pero el workspace aun no aparece"
+          description="Esto suele pasar cuando todavia no corriste el SQL de Supabase o cuando el trigger de alta no termino de crear profile, workspace y membership."
           actions={
             <>
               <Button variant="primary" onClick={onRetry}>
                 Reintentar
               </Button>
               <Button variant="secondary" onClick={onSignOut}>
-                Cerrar sesión
+                Cerrar sesion
               </Button>
             </>
           }
@@ -101,17 +112,27 @@ function AppContent() {
 
   async function loadProspects() {
     if (!workspace) {
+      setLoadingProspects(false);
       return;
     }
 
     setLoadingProspects(true);
-    const { prospects: rows } = await listProspects(workspace.id);
-    setProspects(sortProspects(rows));
-    setLoadingProspects(false);
+    try {
+      const { prospects: rows } = await listProspects(workspace.id);
+      setProspects(sortProspects(rows));
+    } finally {
+      setLoadingProspects(false);
+    }
   }
 
   function upsertProspect(nextProspect) {
-    setProspects((current) => sortProspects(current.some((item) => item.id === nextProspect.id) ? current.map((item) => (item.id === nextProspect.id ? nextProspect : item)) : [nextProspect, ...current]));
+    setProspects((current) =>
+      sortProspects(
+        current.some((item) => item.id === nextProspect.id)
+          ? current.map((item) => (item.id === nextProspect.id ? nextProspect : item))
+          : [nextProspect, ...current]
+      )
+    );
     setSelectedProspectId(nextProspect.id);
   }
 
@@ -144,7 +165,7 @@ function AppContent() {
       });
 
       if (!result.session) {
-        setNotice("Cuenta creada. Revisa tu correo para confirmar el acceso y luego inicia sesión.");
+        setNotice("Cuenta creada. Si no entraste automaticamente, inicia sesion con tu email y password.");
       }
     } finally {
       setBusy("");
@@ -170,7 +191,7 @@ function AppContent() {
       const nextProspect = await ensureProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
       setView(VIEWS.ANALYSIS);
-      setToast({ tone: "success", message: "Análisis persistido correctamente." });
+      setToast({ tone: "success", message: "Analisis persistido correctamente." });
       return nextProspect;
     } finally {
       setBusy("");
@@ -263,7 +284,7 @@ function AppContent() {
       const nextProspect = await regenerateProspectAnalysis(workspace.id, target);
       upsertProspect(nextProspect);
       setView(VIEWS.ANALYSIS);
-      setToast({ tone: "success", message: "Análisis regenerado correctamente." });
+      setToast({ tone: "success", message: "Analisis regenerado correctamente." });
       return nextProspect;
     } finally {
       setBusy("");
@@ -374,20 +395,22 @@ function AppContent() {
   }
 
   if (view === VIEWS.ASSETS) {
-    screen = canAccessAssets ? <AssetsScreen prospect={selectedProspect} /> : <EmptyState title="Tu plan no incluye exportación" description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter sí habilita assets, pero este mensaje protege el flujo." />;
+    screen = canAccessAssets ? (
+      <AssetsScreen prospect={selectedProspect} />
+    ) : (
+      <EmptyState
+        title="Tu plan no incluye exportacion"
+        description="La estructura ya soporta feature gating por plan. En esta demo el plan Starter si habilita assets, pero este mensaje protege el flujo."
+      />
+    );
   }
 
   return (
     <div style={{ display: "flex", height: "100vh", background: theme.bg, overflow: "hidden" }}>
-      <Sidebar
-        view={view}
-        setView={navigate}
-        prospect={selectedProspect}
-        profile={profile}
-        workspace={workspace}
-        onSignOut={signOut}
-      />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>{loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}</div>
+      <Sidebar view={view} setView={navigate} prospect={selectedProspect} profile={profile} workspace={workspace} onSignOut={signOut} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        {loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}
+      </div>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
     </div>
   );

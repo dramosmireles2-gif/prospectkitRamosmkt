@@ -31,9 +31,9 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
     } catch (nextError) {
       const msg = nextError.message || "";
       if (msg.includes("Invalid login")) {
-        setError("Email o contraseña incorrectos.");
+        setError("Email o password incorrectos.");
       } else if (msg.includes("already registered")) {
-        setError("Este email ya tiene una cuenta. Inicia sesión.");
+        setError("Este email ya tiene una cuenta. Inicia sesion.");
       } else {
         setError(msg || "No se pudo autenticar. Intenta de nuevo.");
       }
@@ -65,13 +65,13 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
           </div>
           <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", marginBottom: 8 }}>ProspectKit</div>
           <div style={{ fontSize: 14, color: theme.muted, lineHeight: 1.7 }}>
-            Administra prospectos, genera análisis accionables y prepara el terreno para vender este flujo como SaaS.
+            Administra prospectos, genera analisis accionables y prepara el terreno para vender este flujo como SaaS.
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
           <Button variant={mode === "signin" ? "primary" : "secondary"} size="sm" onClick={() => switchMode("signin")}>
-            Iniciar sesión
+            Iniciar sesion
           </Button>
           <Button variant={mode === "signup" ? "primary" : "secondary"} size="sm" onClick={() => switchMode("signup")}>
             Crear cuenta
@@ -103,7 +103,7 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
             type="password"
             value={form.password}
             onChange={(value) => setForm((current) => ({ ...current, password: value }))}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Minimo 6 caracteres"
             autoComplete={isSignUp ? "new-password" : "current-password"}
             error={fieldErrors.password}
           />

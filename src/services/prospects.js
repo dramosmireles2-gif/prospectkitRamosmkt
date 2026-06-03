@@ -268,7 +268,7 @@ export function buildDashboardMetrics(prospects) {
   const recommendations = rankedProspects.slice(0, 4).map((prospect) => ({
     id: prospect.id,
     label: prospect.analysis ? `Pulir ${prospect.name}` : `Analizar ${prospect.name}`,
-    desc: `${prospect.industry} · score ${prospect.opportunityScore}`,
+    desc: `${prospect.industry} - score ${prospect.opportunityScore}`,
     targetView: prospect.analysis ? "analysis" : "detail"
   }));
 

@@ -120,9 +120,7 @@ export function TopBar({ title, crumb, actions }) {
       }}
     >
       <div style={{ flex: 1 }}>
-        {crumb ? (
-          <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{crumb}</div>
-        ) : null}
+        {crumb ? <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{crumb}</div> : null}
         <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, letterSpacing: "-0.01em" }}>{title}</div>
       </div>
       {actions ? <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{actions}</div> : null}
@@ -155,9 +153,7 @@ export function Tag({ children, color }) {
 export function Metric({ label, value, sub, accent }) {
   return (
     <Card style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>
-        {label}
-      </div>
+      <div style={{ fontSize: 11, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>{label}</div>
       <div
         style={{
           fontSize: 32,
@@ -194,15 +190,7 @@ export function ScoreRing({ value, size = 76 }) {
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <text
-        x={size / 2}
-        y={size / 2 + 1}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={color}
-        fontSize={17}
-        fontWeight="800"
-      >
+      <text x={size / 2} y={size / 2 + 1} textAnchor="middle" dominantBaseline="middle" fill={color} fontSize={17} fontWeight="800">
         {value}
       </text>
     </svg>
@@ -241,16 +229,16 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
 
 export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut }) {
   const navigation = [
-    { id: "dashboard", label: "Dashboard", icon: "▦" },
-    { id: "prospects", label: "Prospectos", icon: "◉" }
+    { id: "dashboard", label: "Dashboard", icon: "#" },
+    { id: "prospects", label: "Prospectos", icon: "@" }
   ];
 
   const prospectNav = prospect
     ? [
-        { id: "detail", label: "Ficha", icon: "□" },
-        { id: "analysis", label: "Análisis", icon: opportunityConfig.web.icon },
-        { id: "kitgen", label: "Kit", icon: "✦" },
-        { id: "assets", label: "Assets", icon: "▣" }
+        { id: "detail", label: "Ficha", icon: ">" },
+        { id: "analysis", label: "Analisis", icon: opportunityConfig.web.icon },
+        { id: "kitgen", label: "Kit", icon: "*" },
+        { id: "assets", label: "Assets", icon: "+" }
       ]
     : [];
 
@@ -309,7 +297,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
               padding: "0 10px 6px"
             }}
           >
-            {prospect.name.length > 18 ? `${prospect.name.slice(0, 17)}…` : prospect.name}
+            {prospect.name.length > 18 ? `${prospect.name.slice(0, 17)}...` : prospect.name}
           </div>
           {prospectNav.map((item) => (
             <NavItem key={item.id} {...item} indent active={view === item.id} onClick={setView} />
@@ -365,7 +353,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
         </div>
       </div>
       <Button variant="ghost" size="sm" onClick={onSignOut} style={{ marginTop: 10, justifyContent: "flex-start" }}>
-        Cerrar sesión
+        Cerrar sesion
       </Button>
     </div>
   );
@@ -488,7 +476,7 @@ export function ModalFrame({ title, description, onClose, children }) {
             {description ? <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{description}</div> : null}
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: theme.muted, fontSize: 18 }}>
-            ×
+            x
           </button>
         </div>
         <div style={{ padding: 24 }}>{children}</div>
@@ -535,8 +523,12 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", onCo
         <div style={{ fontSize: 16, fontWeight: 700, color: theme.text, marginBottom: 8 }}>{title}</div>
         <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.6, marginBottom: 20 }}>{message}</div>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <Button variant="secondary" size="sm" onClick={onCancel}>Cancelar</Button>
-          <Button variant="danger" size="sm" onClick={onConfirm}>{confirmLabel}</Button>
+          <Button variant="secondary" size="sm" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button variant="danger" size="sm" onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
         </div>
       </div>
     </div>
@@ -574,7 +566,7 @@ export function Toast({ tone = "success", message, onClose, duration = 3500 }) {
     >
       <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{message}</span>
       <button onClick={onClose} style={{ background: "transparent", border: "none", color, cursor: "pointer" }}>
-        ×
+        x
       </button>
     </div>
   );
