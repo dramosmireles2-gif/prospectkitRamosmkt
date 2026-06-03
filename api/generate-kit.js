@@ -13,38 +13,43 @@ export default async function handler(req, res) {
   }
 
   const topService = analysis.recommendedServices?.[0]?.service || "estrategia digital";
+  const topPrice = analysis.recommendedServices?.[0]?.revenue || "";
+  const topUnit = analysis.recommendedServices?.[0]?.unit || "";
   const weaknesses = (analysis.weaknesses || []).slice(0, 3).join(", ");
+  const upsell = analysis.recommendedServices?.[1]?.service || "";
 
-  const prompt = `Eres Carlos Ramos de RamosMKT, experto en ventas digitales para PyMEs en México. Crea mensajes de prospección personalizados para este negocio.
+  const prompt = `Eres Carlos Ramos de RamosMKT (ramosmkt.lat), agencia tecnológica en Reynosa, Tam. Creas mensajes de prospección personalizados y directos para PyMEs mexicanas.
 
 PROSPECTO: ${prospect.name} | ${prospect.industry} | ${prospect.city}
-OPORTUNIDAD PRINCIPAL: ${topService}
-DEBILIDADES: ${weaknesses}
+SERVICIO PRINCIPAL A VENDER: ${topService}${topPrice ? ` — desde $${topPrice.toLocaleString()} MXN${topUnit}` : ""}
+UPSELL NATURAL: ${upsell}
+DEBILIDADES DETECTADAS: ${weaknesses}
 SCORE: ${analysis.opportunityScore}/100
 
 Devuelve SOLO este JSON (sin markdown):
 {
   "channelMessages": {
-    "whatsapp": "<mensaje directo, máx 3 párrafos, tono consultivo, incluye emoji de apertura, termina con pregunta>",
-    "instagram": "<mensaje corto para DM, máx 2 líneas, casual y directo>",
-    "facebook": "<mensaje para página de Facebook, tono profesional, máx 2 párrafos>",
+    "whatsapp": "<mensaje directo, máx 3 párrafos cortos, tono consultivo no vendedor, emoji de apertura, termina con pregunta concreta, firma Carlos / RamosMKT>",
+    "instagram": "<DM casual, máx 2 líneas, directo y humano, sin emojis exagerados>",
+    "facebook": "<mensaje profesional para página, máx 2 párrafos, menciona hallazgo específico del negocio>",
     "email": {
-      "subject": "<asunto concreto y relevante, no genérico>",
-      "body": "<cuerpo del email profesional, 3-4 párrafos, incluye hallazgos específicos y CTA claro>"
+      "subject": "<asunto concreto con el nombre del negocio, no genérico>",
+      "body": "<email profesional 3-4 párrafos: apertura con hallazgo específico, 2-3 puntos del diagnóstico, CTA claro con precio o siguiente paso, firma Carlos Ramos / RamosMKT / ramosmkt.lat / +52 814 807 8309>"
     }
   },
   "proposalSnapshot": {
-    "before": ["<situación actual negativa 1>", "<situación actual negativa 2>", "<situación actual negativa 3>"],
-    "after": ["<mejora concreta 1>", "<mejora concreta 2>", "<mejora concreta 3>", "<mejora concreta 4>"],
-    "summary": "<1 oración impactante sobre la transformación posible>"
+    "before": ["<situación actual negativa 1 específica>", "<situación actual 2>", "<situación actual 3>"],
+    "after": ["<mejora concreta 1 con ${topService}>", "<mejora 2>", "<mejora 3>", "<mejora 4 con ${upsell || 'siguiente servicio'}>"],
+    "summary": "<1 oración de transformación específica para este negocio>"
   }
 }
 
 Reglas:
-- Usa el nombre del negocio directamente, no "su empresa"
+- Usa el nombre exacto del negocio, no "su empresa" ni "tu negocio"
 - Menciona la ciudad o industria para mostrar que investigaste
-- Los mensajes deben sonar humanos, no como template
-- El before/after debe ser específico para este negocio, no genérico`;
+- Los mensajes deben sonar humanos, no como plantilla corporativa
+- El before/after debe ser específico para ${prospect.name}, no genérico
+- En el email incluye el precio del servicio principal como referencia`;
 
   try {
     const message = await client.messages.create({
