@@ -44,7 +44,7 @@ export async function signUpWithPassword({ fullName, email, password }) {
 
 export async function signOutCurrentUser() {
   try {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
   } catch {
     // ignore errors — clear session regardless
   }
