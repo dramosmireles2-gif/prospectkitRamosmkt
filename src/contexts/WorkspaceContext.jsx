@@ -17,6 +17,7 @@ export function WorkspaceProvider({ children }) {
     if (!hasConfig || !user) {
       setWorkspace(null);
       setMembership(null);
+      setDebugError("");
       setLoading(false);
       return null;
     }
@@ -33,8 +34,11 @@ export function WorkspaceProvider({ children }) {
     const sessionUserId = currentSession?.user?.id;
     const tokenExp = currentSession?.expires_at;
     const now = Math.floor(Date.now() / 1000);
+    const displayMode = typeof window !== "undefined" && window.matchMedia ? (window.matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser") : "unknown";
+    const currentUrl = typeof window !== "undefined" ? window.location?.href : "";
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
 
-    const errors = [`userId=${user.id} sessionUID=${sessionUserId} tokenExp=${tokenExp} now=${now} expired=${tokenExp < now}`];
+    const errors = [`userId=${user.id} sessionUID=${sessionUserId} tokenExp=${tokenExp} now=${now} expired=${tokenExp < now} mode=${displayMode} online=${online} url=${currentUrl}`];
 
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
