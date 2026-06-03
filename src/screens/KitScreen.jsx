@@ -32,6 +32,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
   const [tab, setTab] = useState("messages");
   const [copyStatus, setCopyStatus] = useState(null);
   const [error, setError] = useState("");
+  const [editedMessages, setEditedMessages] = useState({});
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
@@ -53,6 +54,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
     setTab("messages");
     setCopyStatus(null);
     setError("");
+    setEditedMessages({});
     return () => clearProgressTimers();
   }, [prospect?.id, prospect?.kit?.id]);
 
@@ -71,6 +73,14 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         { id: "email", label: "Email", icon: "✉️", color: theme.blue, text: `ASUNTO: ${kit.email.subject}\n\n${kit.email.body}` }
       ]
     : [];
+
+  function getCurrentText(id, originalText) {
+    return editedMessages[id] !== undefined ? editedMessages[id] : originalText;
+  }
+
+  function handleEditMessage(id, value) {
+    setEditedMessages((prev) => ({ ...prev, [id]: value }));
+  }
 
   async function startGenerate() {
     clearProgressTimers();
@@ -109,6 +119,11 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
       setCopyStatus({ id, tone: "error", message: "No se pudo copiar" });
       setTimeout(() => setCopyStatus(null), 2200);
     }
+  }
+
+  function getWhatsAppUrl(text) {
+    const digits = (prospect.whatsapp || "").replace(/\D/g, "");
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
   }
 
   return (
@@ -219,7 +234,8 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                     borderBottom: tab === item.id ? `2px solid ${theme.accent}` : "2px solid transparent",
                     color: tab === item.id ? theme.accent : theme.muted,
                     fontSize: 13,
-                    fontWeight: tab === item.id ? 600 : 400
+                    fontWeight: tab === item.id ? 600 : 400,
+                    cursor: "pointer"
                   }}
                 >
                   {item.label}
@@ -229,23 +245,67 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
 
             {tab === "messages" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {messages.map((message) => (
-                  <Card key={message.id} style={{ padding: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>{message.icon}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
+                {messages.map((message) => {
+                  const currentText = getCurrentText(message.id, message.text);
+                  return (
+                    <Card key={message.id} style={{ padding: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>{message.icon}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>{message.label}</span>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: message.color }} />
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {message.id === "whatsapp" && prospect.whatsapp ? (
+                            <a
+                              href={getWhatsAppUrl(currentText)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                padding: "6px 12px",
+                                borderRadius: 9,
+                                background: "rgba(37,211,102,0.1)",
+                                border: "1px solid rgba(37,211,102,0.3)",
+                                color: "#25d366",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                textDecoration: "none"
+                              }}
+                            >
+                              💬 Abrir en WhatsApp
+                            </a>
+                          ) : null}
+                          <Button variant="secondary" size="sm" onClick={() => copyText(message.id, currentText)}>
+                            {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
+                          </Button>
+                        </div>
                       </div>
-                      <Button variant="secondary" size="sm" onClick={() => copyText(message.id, message.text)}>
-                        {copyStatus?.id === message.id ? copyStatus.message : "Copiar"}
-                      </Button>
-                    </div>
-                    <div style={{ background: theme.s3, borderRadius: 8, padding: "14px 16px", fontSize: 13, color: theme.text, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
-                      {message.text}
-                    </div>
-                  </Card>
-                ))}
+                      <textarea
+                        value={currentText}
+                        onChange={(e) => handleEditMessage(message.id, e.target.value)}
+                        style={{
+                          width: "100%",
+                          background: theme.s3,
+                          borderRadius: 8,
+                          padding: "14px 16px",
+                          fontSize: 13,
+                          color: theme.text,
+                          lineHeight: 1.75,
+                          whiteSpace: "pre-wrap",
+                          border: `1px solid ${theme.border}`,
+                          resize: "vertical",
+                          minHeight: 100,
+                          fontFamily: "inherit",
+                          outline: "none",
+                          boxSizing: "border-box"
+                        }}
+                      ></textarea>
+                    </Card>
+                  );
+                })}
               </div>
             ) : null}
 
