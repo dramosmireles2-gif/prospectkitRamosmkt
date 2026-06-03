@@ -20,27 +20,34 @@ export function WorkspaceProvider({ children }) {
     }
 
     setLoading(true);
-
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       console.error("Workspace load timeout");
       setLoading(false);
-    }, 10000);
+    }, 15000);
 
-    try {
-      const result = await getCurrentWorkspace(user.id);
-      setWorkspace(result?.workspace ?? null);
-      setMembership(result?.membership ?? null);
-      return result;
-    } catch (error) {
-      console.error("Error loading workspace", error);
-      setWorkspace(null);
-      setMembership(null);
-      return null;
-    } finally {
-      clearTimeout(timeoutRef.current);
-      setLoading(false);
+    // Retry up to 3 times with 1.5s delay — handles cold starts and token refresh delays
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const result = await getCurrentWorkspace(user.id);
+        if (result?.workspace) {
+          setWorkspace(result.workspace);
+          setMembership(result.membership ?? null);
+          clearTimeout(timeoutRef.current);
+          setLoading(false);
+          return result;
+        }
+      } catch (error) {
+        console.error(`Workspace load attempt ${attempt + 1} failed`, error);
+      }
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
     }
+
+    setWorkspace(null);
+    setMembership(null);
+    clearTimeout(timeoutRef.current);
+    setLoading(false);
+    return null;
   }
 
   useEffect(() => {
