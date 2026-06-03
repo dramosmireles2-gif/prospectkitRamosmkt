@@ -16,10 +16,12 @@ export const VIEWS = {
   ANALYSIS: "analysis",
   KIT: "kitgen",
   ASSETS: "assets",
-  ROI: "roi"
+  ROI: "roi",
+  LTV: "ltv",
+  GAP: "gap"
 };
 
-export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS, VIEWS.ROI];
+export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS, VIEWS.ROI, VIEWS.LTV, VIEWS.GAP];
 
 export const PIPELINE_STAGES = [
   { id: "lead",        label: "Lead",             color: "#777777", bg: "rgba(119,119,119,0.1)"  },

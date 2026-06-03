@@ -27,6 +27,8 @@ import { DetailScreen } from "../screens/DetailScreen";
 import { KitScreen } from "../screens/KitScreen";
 import { PipelineScreen } from "../screens/PipelineScreen";
 import { ROIScreen } from "../screens/ROIScreen";
+import { LTVScreen } from "../screens/LTVScreen";
+import { GapScreen } from "../screens/GapScreen";
 import { AttackPlanScreen } from "../screens/AttackPlanScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
@@ -396,6 +398,8 @@ function AppContent() {
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
         onOpenAssets={() => navigate(VIEWS.ASSETS)}
         onOpenROI={() => navigate(VIEWS.ROI)}
+        onOpenLTV={() => navigate(VIEWS.LTV)}
+        onOpenGap={() => navigate(VIEWS.GAP)}
       />
     );
   }
@@ -431,6 +435,24 @@ function AppContent() {
   if (view === VIEWS.ROI) {
     screen = (
       <ROIScreen
+        prospect={selectedProspect}
+        onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
+      />
+    );
+  }
+
+  if (view === VIEWS.LTV) {
+    screen = (
+      <LTVScreen
+        prospect={selectedProspect}
+        onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
+      />
+    );
+  }
+
+  if (view === VIEWS.GAP) {
+    screen = (
+      <GapScreen
         prospect={selectedProspect}
         onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
       />

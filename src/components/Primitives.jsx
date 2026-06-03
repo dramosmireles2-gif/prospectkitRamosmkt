@@ -286,6 +286,8 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
         { id: "detail",   label: "Ficha",    icon: "□" },
         { id: "analysis", label: "Análisis", icon: opportunityConfig.web.icon },
         { id: "roi",      label: "ROI",      icon: "₿" },
+        { id: "ltv",      label: "LTV",      icon: "📈" },
+        { id: "gap",      label: "Brecha",   icon: "⚖" },
         { id: "kitgen",   label: "Kit",      icon: "✦" },
         { id: "assets",   label: "Assets",   icon: "▣" }
       ]
