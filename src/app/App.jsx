@@ -3,7 +3,19 @@ import { Sidebar, Toast, EmptyState, Button } from "../components/Primitives";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "../contexts/WorkspaceContext";
 import { canUse, FEATURES } from "../services/featureFlags";
-import { buildDashboardMetrics, createProspect, deleteProspect, ensureProspectAnalysis, ensureProspectKit, listProspects, regenerateProspectAnalysis, regenerateProspectKit, seedDemoWorkspace, updateProspect } from "../services/prospects";
+import {
+  buildDashboardMetrics,
+  createProspect,
+  deleteProspect,
+  ensureProspectAnalysis,
+  ensureProspectKit,
+  listProspects,
+  regenerateProspectAnalysis,
+  regenerateProspectKit,
+  seedDemoWorkspace,
+  updateProspect,
+  updatePipelineStage
+} from "../services/prospects";
 import { VIEWS, PROSPECT_VIEWS } from "./constants";
 import { theme } from "./theme";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
@@ -12,6 +24,7 @@ import { AuthScreen } from "../screens/AuthScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { DetailScreen } from "../screens/DetailScreen";
 import { KitScreen } from "../screens/KitScreen";
+import { PipelineScreen } from "../screens/PipelineScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
 
@@ -270,6 +283,15 @@ function AppContent() {
     }
   }
 
+  async function handleUpdatePipelineStage(prospectId, stage) {
+    try {
+      const nextProspect = await updatePipelineStage(prospectId, stage);
+      upsertProspect(nextProspect);
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo actualizar la etapa." });
+    }
+  }
+
   async function handleRegenerateKit(target = selectedProspect) {
     if (!target) return null;
     setBusy("kit");
@@ -369,6 +391,19 @@ function AppContent() {
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
         onRegenerateKit={() => handleRegenerateKit(selectedProspect)}
         onOpenAssets={() => navigate(VIEWS.ASSETS)}
+      />
+    );
+  }
+
+  if (view === VIEWS.PIPELINE) {
+    screen = (
+      <PipelineScreen
+        prospects={prospects}
+        onUpdateStage={handleUpdatePipelineStage}
+        onSelectProspect={(prospect) => {
+          setSelectedProspectId(prospect.id);
+          setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+        }}
       />
     );
   }

@@ -59,6 +59,9 @@ function normalizeProspect(row) {
     notes: row.notes || "",
     status: row.status,
     opportunityScore: row.opportunity_score || 0,
+    salesLikelihoodScore: row.sales_likelihood_score || 0,
+    leadTemperature: row.lead_temperature || "frio",
+    pipelineStage: row.pipeline_stage || "lead",
     lastActivityAt: row.last_activity_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -112,6 +115,9 @@ export async function createProspect(workspaceId, input) {
     notes: input.notes?.trim() || null,
     status: "new",
     opportunity_score: opportunityScore,
+    sales_likelihood_score: salesLikelihoodScore,
+    lead_temperature: leadTemperature,
+    pipeline_stage: "lead",
     last_activity_at: new Date().toISOString()
   };
 
@@ -136,6 +142,15 @@ export async function updateProspect(input) {
   }
 
   return fetchProspectById(id);
+}
+
+export async function updatePipelineStage(prospectId, stage) {
+  const { error } = await supabase
+    .from("prospects")
+    .update({ pipeline_stage: stage, last_activity_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", prospectId);
+  if (error) throw error;
+  return fetchProspectById(prospectId);
 }
 
 export async function deleteProspect(prospectId) {

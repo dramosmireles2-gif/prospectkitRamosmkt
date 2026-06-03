@@ -10,6 +10,7 @@ export const STATUS_ORDER = [STATUS.NEW, STATUS.ANALYZED, STATUS.KIT_READY, STAT
 export const VIEWS = {
   DASHBOARD: "dashboard",
   PROSPECTS: "prospects",
+  PIPELINE: "pipeline",
   DETAIL: "detail",
   ANALYSIS: "analysis",
   KIT: "kitgen",
@@ -17,6 +18,17 @@ export const VIEWS = {
 };
 
 export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS];
+
+export const PIPELINE_STAGES = [
+  { id: "lead",        label: "Lead",             color: "#777777", bg: "rgba(119,119,119,0.1)"  },
+  { id: "contactado",  label: "Contactado",        color: "#4a9eff", bg: "rgba(74,158,255,0.1)"  },
+  { id: "respondio",   label: "Respondió",         color: "#9966ff", bg: "rgba(153,102,255,0.1)" },
+  { id: "reunion",     label: "Reunión agendada",  color: "#ffbb44", bg: "rgba(255,187,68,0.1)"  },
+  { id: "propuesta",   label: "Propuesta enviada", color: "#ff7744", bg: "rgba(255,119,68,0.1)"  },
+  { id: "negociacion", label: "Negociación",       color: "#ff4455", bg: "rgba(255,68,85,0.1)"   },
+  { id: "ganado",      label: "Ganado",            color: "#00ff88", bg: "rgba(0,255,136,0.1)"   },
+  { id: "perdido",     label: "Perdido",           color: "#444444", bg: "rgba(68,68,68,0.1)"    }
+];
 
 export const INDUSTRIES = [
   "Restaurante",

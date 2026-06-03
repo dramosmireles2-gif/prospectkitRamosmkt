@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { opportunityConfig, statusConfig, theme } from "../app/theme";
 import { getInitials } from "../utils/format";
+import { TEMPERATURE_CONFIG, LIKELIHOOD_CONFIG } from "../services/heuristics";
 
 export function Badge({ status }) {
   const config = statusConfig[status] || { label: status, color: "#666666", bg: "rgba(100,100,100,0.1)" };
@@ -23,6 +24,39 @@ export function Badge({ status }) {
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: config.color, flexShrink: 0 }} />
       {config.label}
     </span>
+  );
+}
+
+export function TemperatureBadge({ temperature, size = "md" }) {
+  const t = temperature || "frio";
+  const config = TEMPERATURE_CONFIG[t] || TEMPERATURE_CONFIG.frio;
+  const pad = size === "sm" ? "2px 8px" : "3px 10px";
+  const fs = size === "sm" ? 11 : 12;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: pad, borderRadius: 20, background: config.bg, border: `1px solid ${config.color}33`, fontSize: fs, fontWeight: 600, color: config.color, whiteSpace: "nowrap" }}>
+      <span style={{ fontSize: fs - 1 }}>{config.dot}</span>
+      {config.label}
+    </span>
+  );
+}
+
+export function LikelihoodBar({ score, showLabel = true }) {
+  const s = score || 0;
+  const color = LIKELIHOOD_CONFIG.color(s);
+  const label = LIKELIHOOD_CONFIG.label(s);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {showLabel && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: theme.muted }}>Sales Likelihood</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color }}>{s}<span style={{ color: theme.muted, fontWeight: 400 }}>/100</span></span>
+        </div>
+      )}
+      <div style={{ height: 5, borderRadius: 3, background: theme.s3, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${s}%`, background: color, borderRadius: 3, transition: "width 0.6s ease" }} />
+      </div>
+      {showLabel && <span style={{ fontSize: 10, color, fontWeight: 600 }}>{label}</span>}
+    </div>
   );
 }
 
@@ -242,7 +276,8 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
 export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut }) {
   const navigation = [
     { id: "dashboard", label: "Dashboard", icon: "▦" },
-    { id: "prospects", label: "Prospectos", icon: "◉" }
+    { id: "prospects", label: "Prospectos", icon: "◉" },
+    { id: "pipeline",  label: "Pipeline",   icon: "⬦" }
   ];
 
   const prospectNav = prospect
