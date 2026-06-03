@@ -35,14 +35,31 @@ function Bar({ value, max, color, label, sub }) {
   );
 }
 
-export function LTVScreen({ prospect, onBack }) {
+function getActiveProposal(proposals) {
+  if (!proposals?.length) return null;
+  const priority = ["aceptada", "negociacion", "enviada", "borrador"];
+  for (const status of priority) {
+    const found = proposals.find((p) => p.status === status);
+    if (found) return found;
+  }
+  return proposals[0];
+}
+
+export function LTVScreen({ prospect, proposals, onBack }) {
   const [scenario, setScenario] = useState("realista");
 
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="El cálculo de LTV requiere un prospecto con análisis." />;
   }
 
-  const monthly = prospect.analysis?.revenue?.min || 0;
+  const activeProposal = getActiveProposal(proposals);
+  // Use actual negotiated monthly recurring from proposal, fall back to analysis estimate
+  const proposalMonthly = activeProposal
+    ? (activeProposal.services || [])
+        .filter((s) => s.type === "mensual" || s.type === "setup+mensual")
+        .reduce((sum, s) => sum + (s.negotiatedPrice || 0), 0)
+    : 0;
+  const monthly = proposalMonthly > 0 ? proposalMonthly : (prospect.analysis?.revenue?.min || 0);
   const ret = RETENTION[scenario];
 
   if (!monthly) {
@@ -87,6 +104,13 @@ export function LTVScreen({ prospect, onBack }) {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Source banner */}
+        {activeProposal && proposalMonthly > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
+            <span style={{ fontSize: 16 }}>📄</span>
+            <span>Base mensual tomada de <strong style={{ color: theme.accent }}>Propuesta v{activeProposal.version}</strong> — mensual recurrente negociado.</span>
+          </div>
+        )}
         {/* Scenario selector */}
         <div style={{ display: "flex", gap: 8 }}>
           {Object.entries(RETENTION).map(([key, cfg]) => (
