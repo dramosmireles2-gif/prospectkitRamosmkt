@@ -29,7 +29,13 @@ export function WorkspaceProvider({ children }) {
       setLoading(false);
     }, 15000);
 
-    const errors = [];
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    const sessionUserId = currentSession?.user?.id;
+    const tokenExp = currentSession?.expires_at;
+    const now = Math.floor(Date.now() / 1000);
+
+    const errors = [`userId=${user.id} sessionUID=${sessionUserId} tokenExp=${tokenExp} now=${now} expired=${tokenExp < now}`];
+
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
         if (attempt === 2) {
@@ -43,9 +49,9 @@ export function WorkspaceProvider({ children }) {
           setLoading(false);
           return result;
         }
-        errors.push(`intento ${attempt + 1}: sin workspace (userId=${user.id})`);
+        errors.push(`i${attempt + 1}:null`);
       } catch (error) {
-        errors.push(`intento ${attempt + 1}: ${error.message}`);
+        errors.push(`i${attempt + 1}:${error.message}`);
         console.error(`Workspace load attempt ${attempt + 1} failed`, error);
       }
       if (attempt < 3) await new Promise((r) => setTimeout(r, 1500));
