@@ -360,6 +360,64 @@ export function estimateOpportunityScore(prospect) {
   return clamp(Math.round(100 - averageMaturity + missingIntensity), 40, 96);
 }
 
+// Sales Likelihood Score: probabilidad de que ESTE prospecto compre a RMKT.
+// A diferencia del Opportunity Score (que mide el gap digital),
+// este mide la propensión a invertir en marketing digital.
+export function estimateSalesLikelihoodScore(prospect) {
+  let score = 30; // base
+
+  // Señales de inversión digital previa
+  if (prospect.website) score += 20;
+  if (prospect.instagram) score += 10;
+  if (prospect.facebook) score += 8;
+  if (prospect.whatsapp) score += 12;
+
+  // Tener múltiples canales = ya invierte en digital = más probable que pague
+  const channelCount = [prospect.website, prospect.instagram, prospect.facebook, prospect.whatsapp].filter(Boolean).length;
+  if (channelCount >= 3) score += 10;
+  if (channelCount === 4) score += 5;
+
+  // Notas con señales positivas
+  const notes = (prospect.notes || "").toLowerCase();
+  const hotWords = ["urgente", "necesito", "quiero", "presupuesto", "cuanto", "precio", "crecer", "ventas", "clientes", "pronto"];
+  const coldWords = ["no tengo", "sin presupuesto", "no puedo", "gratis", "barato", "no interesa"];
+  hotWords.forEach(w => { if (notes.includes(w)) score += 5; });
+  coldWords.forEach(w => { if (notes.includes(w)) score -= 8; });
+
+  return clamp(score, 5, 98);
+}
+
+export function calcLeadTemperature(salesLikelihoodScore) {
+  if (salesLikelihoodScore >= 86) return "urgente";
+  if (salesLikelihoodScore >= 71) return "caliente";
+  if (salesLikelihoodScore >= 51) return "tibio";
+  return "frio";
+}
+
+export const TEMPERATURE_CONFIG = {
+  urgente:  { label: "Urgente",  color: "#ff4455", bg: "rgba(255,68,85,0.15)",    dot: "🔴" },
+  caliente: { label: "Caliente", color: "#ff7744", bg: "rgba(255,119,68,0.15)",   dot: "🟠" },
+  tibio:    { label: "Tibio",    color: "#ffbb44", bg: "rgba(255,187,68,0.15)",   dot: "🟡" },
+  frio:     { label: "Frío",     color: "#4a9eff", bg: "rgba(74,158,255,0.15)",   dot: "🔵" }
+};
+
+export const LIKELIHOOD_CONFIG = {
+  label: (score) => {
+    if (score >= 86) return "Prospecto prioritario";
+    if (score >= 71) return "Alta probabilidad";
+    if (score >= 51) return "Posible cliente";
+    if (score >= 31) return "Baja probabilidad";
+    return "Muy difícil";
+  },
+  color: (score) => {
+    if (score >= 86) return "#00ff88";
+    if (score >= 71) return "#ffbb44";
+    if (score >= 51) return "#4a9eff";
+    if (score >= 31) return "#ff7744";
+    return "#ff4455";
+  }
+};
+
 export async function generateProspectAnalysisAI(prospect) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 26000);
@@ -428,6 +486,8 @@ export function generateProspectAnalysis(prospect) {
   const playbook = getPlaybook(prospect.industry);
   const scoreBreakdown = buildScoreBreakdown(prospect);
   const opportunityScore = estimateOpportunityScore(prospect);
+  const salesLikelihoodScore = estimateSalesLikelihoodScore(prospect);
+  const leadTemperature = calcLeadTemperature(salesLikelihoodScore);
   const missingFeatures = buildMissingFeatures(prospect, playbook);
   const serviceKeys = topServiceKeys(prospect, missingFeatures, playbook);
   const recommendedServices = serviceKeys.map((key, index) => {
@@ -489,6 +549,8 @@ export function generateProspectAnalysis(prospect) {
       max: revenueMax
     },
     weaknesses: [...new Set(weaknesses)].slice(0, 6),
+    salesLikelihoodScore,
+    leadTemperature,
     source: "heuristic"
   };
 }

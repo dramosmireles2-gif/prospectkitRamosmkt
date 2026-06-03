@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Button, Card, ConfirmDialog, EmptyState, Field } from "../components/Primitives";
+import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, LikelihoodBar, TemperatureBadge } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatDateLabel, formatRelativeTime } from "../utils/format";
 
@@ -101,6 +101,7 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
             <div style={{ fontSize: 20, fontWeight: 800, color: theme.text, letterSpacing: "-0.02em", marginBottom: 6 }}>{prospect.name}</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <Badge status={prospect.status} />
+              <TemperatureBadge temperature={prospect.leadTemperature} size="sm" />
               <span style={{ fontSize: 12, color: theme.muted }}>{prospect.industry}</span>
               <span style={{ fontSize: 12, color: theme.dim }}>·</span>
               <span style={{ fontSize: 12, color: theme.muted }}>{prospect.city}</span>
@@ -108,9 +109,12 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
               <span style={{ fontSize: 12, color: theme.muted }}>{formatDateLabel(prospect.createdAt)}</span>
             </div>
           </div>
-          <div style={{ textAlign: "center", flexShrink: 0 }}>
-            <div style={{ fontSize: 40, fontWeight: 900, color: scoreColor, letterSpacing: "-0.03em", lineHeight: 1 }}>{prospect.opportunityScore}</div>
-            <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 2 }}>Score</div>
+          <div style={{ textAlign: "center", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, minWidth: 120 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 40, fontWeight: 900, color: scoreColor, letterSpacing: "-0.03em", lineHeight: 1 }}>{prospect.opportunityScore}</div>
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 2 }}>Oportunidad</div>
+            </div>
+            <LikelihoodBar score={prospect.salesLikelihoodScore} />
           </div>
         </div>
 

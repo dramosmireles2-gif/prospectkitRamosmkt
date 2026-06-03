@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Button, Card, Field, ModalFrame } from "../components/Primitives";
+import { Badge, Button, Card, Field, LikelihoodBar, ModalFrame, TemperatureBadge } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { INDUSTRIES } from "../app/constants";
 import { validateProspectForm } from "../utils/validation";
@@ -122,7 +122,10 @@ function ProspectCard({ prospect, onOpen }) {
             </div>
           </div>
         </div>
-        <Badge status={prospect.status} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <Badge status={prospect.status} />
+          <TemperatureBadge temperature={prospect.leadTemperature} size="sm" />
+        </div>
       </div>
 
       <div style={{ padding: "12px 0", borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}` }}>
@@ -136,6 +139,7 @@ function ProspectCard({ prospect, onOpen }) {
               <div style={{ height: "100%", width: `${prospect.opportunityScore}%`, background: color, borderRadius: 3 }} />
             </div>
             {prospect.analysis ? <div style={{ fontSize: 10, color: theme.muted, marginTop: 4 }}>{prospect.analysis.scoreLabel}</div> : null}
+            <div style={{ marginTop: 8 }}><LikelihoodBar score={prospect.salesLikelihoodScore} /></div>
           </div>
         </div>
       </div>

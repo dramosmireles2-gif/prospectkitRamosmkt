@@ -1,4 +1,4 @@
-import { Button, Card, EmptyState, ScoreRing, Tag } from "../components/Primitives";
+import { Button, Card, EmptyState, LikelihoodBar, ScoreRing, Tag, TemperatureBadge } from "../components/Primitives";
 import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 
@@ -99,7 +99,13 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
           <Card style={{ padding: 22, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
             <ScoreRing value={analysis.opportunityScore} size={90} />
             <div style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{analysis.scoreLabel}</div>
-            <div style={{ fontSize: 10, color: theme.muted }}>Score de oportunidad</div>
+            <div style={{ fontSize: 10, color: theme.muted }}>Oportunidad</div>
+            <div style={{ width: "100%", marginTop: 4 }}>
+              <LikelihoodBar score={analysis.salesLikelihoodScore || prospect?.salesLikelihoodScore || 0} />
+            </div>
+            <div style={{ marginTop: 2 }}>
+              <TemperatureBadge temperature={analysis.leadTemperature || prospect?.leadTemperature} size="sm" />
+            </div>
           </Card>
 
           <Card style={{ padding: 20 }}>

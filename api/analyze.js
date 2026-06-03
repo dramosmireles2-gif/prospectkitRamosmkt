@@ -87,6 +87,8 @@ Devuelve SOLO este JSON (sin markdown):
   ],
   "revenue": {"min": <MXN total>, "max": <MXN total ecosistema>},
   "weaknesses": ["<debilidad concreta y específica>"],
+  "salesLikelihoodScore": <0-100>,
+  "leadTemperature": <"frio"|"tibio"|"caliente"|"urgente">,
   "source": "claude"
 }
 
@@ -94,7 +96,9 @@ Reglas:
 - scoreBreakdown: valor BAJO = mala situación actual = alta oportunidad para RMKT
 - missingFeatures: máximo 6, critical=true si bloquea conversiones
 - recommendedServices: exactamente 4, del más urgente al más estratégico
-- weaknesses: máximo 6, específicas para este negocio`;
+- weaknesses: máximo 6, específicas para este negocio
+- salesLikelihoodScore: probabilidad de que este negocio COMPRE a una agencia digital (0-100). Considera: tiene presupuesto aparente, ya invirtió en digital, tamaño del negocio, señales en notas
+- leadTemperature: "frio" (0-50), "tibio" (51-70), "caliente" (71-85), "urgente" (86-100) basado en salesLikelihoodScore`;
 
   try {
     const message = await client.messages.create({

@@ -1,6 +1,6 @@
 import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
-import { generateProspectAnalysis, generateProspectAnalysisAI, generateProspectKit, generateProspectKitAI, estimateOpportunityScore } from "./heuristics";
+import { generateProspectAnalysis, generateProspectAnalysisAI, generateProspectKit, generateProspectKitAI, estimateOpportunityScore, estimateSalesLikelihoodScore, calcLeadTemperature } from "./heuristics";
 import { supabase } from "./supabase";
 
 function normalizeAnalysis(row) {
@@ -25,6 +25,8 @@ function normalizeAnalysis(row) {
       max: row.revenue_max || 0
     },
     weaknesses: row.weaknesses || [],
+    salesLikelihoodScore: row.sales_likelihood_score || 0,
+    leadTemperature: row.lead_temperature || "frio",
     source: row.source
   };
 }
@@ -59,6 +61,8 @@ function normalizeProspect(row) {
     notes: row.notes || "",
     status: row.status,
     opportunityScore: row.opportunity_score || 0,
+    salesLikelihoodScore: row.sales_likelihood_score || 0,
+    leadTemperature: row.lead_temperature || "frio",
     lastActivityAt: row.last_activity_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -100,6 +104,8 @@ export async function listProspects(workspaceId, { limit = 50, offset = 0 } = {}
 
 export async function createProspect(workspaceId, input) {
   const opportunityScore = estimateOpportunityScore(input);
+  const salesLikelihoodScore = estimateSalesLikelihoodScore(input);
+  const leadTemperature = calcLeadTemperature(salesLikelihoodScore);
   const payload = {
     workspace_id: workspaceId,
     name: input.name.trim(),
@@ -112,6 +118,8 @@ export async function createProspect(workspaceId, input) {
     notes: input.notes?.trim() || null,
     status: "new",
     opportunity_score: opportunityScore,
+    sales_likelihood_score: salesLikelihoodScore,
+    lead_temperature: leadTemperature,
     last_activity_at: new Date().toISOString()
   };
 
@@ -165,6 +173,8 @@ export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }
       revenue_min: analysis.revenue.min,
       revenue_max: analysis.revenue.max,
       weaknesses: analysis.weaknesses,
+      sales_likelihood_score: analysis.salesLikelihoodScore || 0,
+      lead_temperature: analysis.leadTemperature || "frio",
       source: analysis.source,
       updated_at: new Date().toISOString()
     },
@@ -179,6 +189,8 @@ export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }
     id: prospectId,
     status: "analyzed",
     opportunity_score: analysis.opportunityScore,
+    sales_likelihood_score: analysis.salesLikelihoodScore || 0,
+    lead_temperature: analysis.leadTemperature || "frio",
     last_activity_at: new Date().toISOString()
   });
 }
