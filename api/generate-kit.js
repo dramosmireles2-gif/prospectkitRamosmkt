@@ -49,7 +49,7 @@ Reglas:
   try {
     const message = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 1200,
+      max_tokens: 900,
       messages: [{ role: "user", content: prompt }]
     });
 

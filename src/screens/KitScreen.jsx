@@ -89,10 +89,17 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
         clearInterval(intervalRef.current);
         intervalRef.current = null;
         timeoutRef.current = setTimeout(async () => {
+          const safetyTimeout = setTimeout(() => {
+            setError("La generación tardó demasiado. Intenta de nuevo.");
+            setPhase(prospect.kit ? "done" : "idle");
+            setStep(0);
+          }, 30000);
           try {
             await onGenerateKit();
+            clearTimeout(safetyTimeout);
             setPhase("done");
           } catch (nextError) {
+            clearTimeout(safetyTimeout);
             setError(nextError.message || "No se pudo generar el kit.");
             setPhase(prospect.kit ? "done" : "idle");
             setStep(0);
