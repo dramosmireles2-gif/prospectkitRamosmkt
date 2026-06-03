@@ -289,7 +289,8 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
         { id: "ltv",      label: "LTV",      icon: "📈" },
         { id: "gap",      label: "Brecha",   icon: "⚖" },
         { id: "kitgen",   label: "Kit",      icon: "✦" },
-        { id: "assets",   label: "Assets",   icon: "▣" }
+        { id: "assets",   label: "Assets",   icon: "▣" },
+        { id: "proposal", label: "Propuesta", icon: "📄" }
       ]
     : [];
 

@@ -30,8 +30,10 @@ import { ROIScreen } from "../screens/ROIScreen";
 import { LTVScreen } from "../screens/LTVScreen";
 import { GapScreen } from "../screens/GapScreen";
 import { AttackPlanScreen } from "../screens/AttackPlanScreen";
+import { ProposalScreen } from "../screens/ProposalScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
+import { listProposals, saveProposal } from "../services/proposals";
 
 function FullscreenLoader({ label }) {
   const [slow, setSlow] = useState(false);
@@ -93,6 +95,8 @@ function AppContent() {
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState("");
   const [loadingProspects, setLoadingProspects] = useState(false);
+  const [proposals, setProposals] = useState([]);
+  const [savingProposal, setSavingProposal] = useState(false);
 
   const selectedProspect = prospects.find((prospect) => prospect.id === selectedProspectId) || null;
   const metrics = buildDashboardMetrics(prospects);
@@ -116,6 +120,11 @@ function AppContent() {
       setView(VIEWS.PROSPECTS);
     }
   }, [selectedProspectId, selectedProspect]);
+
+  useEffect(() => {
+    if (!selectedProspectId) { setProposals([]); return; }
+    listProposals(selectedProspectId).then(setProposals).catch(() => setProposals([]));
+  }, [selectedProspectId]);
 
   async function loadProspects() {
     if (!workspace) {
@@ -308,6 +317,24 @@ function AppContent() {
     }
   }
 
+  async function handleSaveProposal(payload) {
+    if (!selectedProspect || !workspace) return;
+    setSavingProposal(true);
+    try {
+      const existing = proposals.find((p) => p.version === payload.version && !payload.isNewVersion);
+      const saved = await saveProposal(workspace.id, selectedProspect.id, { ...payload, id: existing?.id }, payload.isNewVersion);
+      setProposals((prev) => {
+        const without = prev.filter((p) => p.id !== saved.id);
+        return [...without, saved].sort((a, b) => b.version - a.version);
+      });
+      setToast({ tone: "success", message: payload.isNewVersion ? `Propuesta v${saved.version} guardada.` : "Propuesta actualizada." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo guardar la propuesta." });
+    } finally {
+      setSavingProposal(false);
+    }
+  }
+
   async function handleRegenerateKit(target = selectedProspect) {
     if (!target) return null;
     setBusy("kit");
@@ -455,6 +482,18 @@ function AppContent() {
       <GapScreen
         prospect={selectedProspect}
         onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
+      />
+    );
+  }
+
+  if (view === VIEWS.PROPOSAL) {
+    screen = (
+      <ProposalScreen
+        prospect={selectedProspect}
+        proposals={proposals}
+        onSave={handleSaveProposal}
+        onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
+        saving={savingProposal}
       />
     );
   }
