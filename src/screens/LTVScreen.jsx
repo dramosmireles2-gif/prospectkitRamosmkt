@@ -3,17 +3,18 @@ import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { formatServicePricing, getRecurringPrice } from "../services/serviceCatalog";
 
 const RETENTION = {
-  optimista:  { label: "Optimista",  color: theme.accent,  monthly: 0.97, bonus: 1.15 },
-  realista:   { label: "Realista",   color: theme.yellow,  monthly: 0.93, bonus: 1.0  },
-  pesimista:  { label: "Pesimista",  color: theme.red,     monthly: 0.87, bonus: 0.85 }
+  optimista: { label: "Optimista", color: theme.accent, monthly: 0.97, bonus: 1.15 },
+  realista: { label: "Realista", color: theme.yellow, monthly: 0.93, bonus: 1.0 },
+  pesimista: { label: "Pesimista", color: theme.red, monthly: 0.87, bonus: 0.85 }
 };
 
 function ltv(monthlyRevenue, months, retention) {
   let total = 0;
   let current = monthlyRevenue * retention.bonus;
-  for (let i = 0; i < months; i++) {
+  for (let i = 0; i < months; i += 1) {
     total += current;
     current *= retention.monthly;
   }
@@ -40,7 +41,7 @@ function getActiveProposal(proposals) {
   if (!proposals?.length) return null;
   const priority = ["aceptada", "negociacion", "enviada", "borrador"];
   for (const status of priority) {
-    const found = proposals.find((p) => p.status === status);
+    const found = proposals.find((proposal) => proposal.status === status);
     if (found) return found;
   }
   return proposals[0];
@@ -51,17 +52,19 @@ export function LTVScreen({ prospect, proposals, onBack }) {
   const [scenario, setScenario] = useState("realista");
 
   if (!prospect) {
-    return <EmptyState title="Selecciona un prospecto" description="El cálculo de LTV requiere un prospecto con análisis." />;
+    return <EmptyState title="Selecciona un prospecto" description="El calculo de LTV requiere un prospecto con analisis." />;
   }
 
   const activeProposal = getActiveProposal(proposals);
-  // Use actual negotiated monthly recurring from proposal, fall back to analysis estimate
-  const proposalMonthly = activeProposal
-    ? (activeProposal.services || [])
-        .filter((s) => s.type === "mensual" || s.type === "setup+mensual")
-        .reduce((sum, s) => sum + (s.negotiatedPrice || 0), 0)
-    : 0;
-  const monthly = proposalMonthly > 0 ? proposalMonthly : (prospect.analysis?.revenue?.min || 0);
+  const proposalRecurringServices = activeProposal
+    ? (activeProposal.services || []).filter((service) => service.type === "mensual" || service.type === "setup+mensual")
+    : [];
+  const analysisRecurringServices = (prospect.analysis?.recommendedServices || []).filter((service) => getRecurringPrice(service) > 0);
+
+  const proposalMonthly = proposalRecurringServices.reduce((sum, service) => sum + (service.negotiatedPrice || 0), 0);
+  const analysisMonthly = analysisRecurringServices.reduce((sum, service) => sum + getRecurringPrice(service), 0);
+  const monthly = proposalMonthly > 0 ? proposalMonthly : analysisMonthly;
+  const recurringServices = proposalRecurringServices.length > 0 ? proposalRecurringServices : analysisRecurringServices;
   const ret = RETENTION[scenario];
 
   if (!monthly) {
@@ -72,27 +75,30 @@ export function LTVScreen({ prospect, proposals, onBack }) {
             <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2 }}>{prospect.name}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Valor de Cliente (LTV)</div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
+          <Button variant="ghost" size="sm" onClick={onBack}>Volver</Button>
         </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <EmptyState title="Genera el análisis primero" description="El LTV se calcula a partir del revenue estimado en el análisis heurístico." />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <EmptyState
+            title="Este prospecto no tiene mensualidad recurrente"
+            description="El LTV solo aplica a servicios mensuales. Un landing de pago unico no genera LTV por si solo hasta que agregas dominio, mantenimiento, ads u otra gestion recurrente."
+          />
         </div>
       </div>
     );
   }
 
-  const ltv3  = ltv(monthly, 3,  ret);
-  const ltv6  = ltv(monthly, 6,  ret);
+  const ltv3 = ltv(monthly, 3, ret);
+  const ltv6 = ltv(monthly, 6, ret);
   const ltv12 = ltv(monthly, 12, ret);
   const ltv24 = ltv(monthly, 24, ret);
   const maxVal = Math.max(ltv3, ltv6, ltv12, ltv24);
 
-  const services = (prospect.analysis?.recommendedServices || []).map((s) => ({
-    ...s,
-    ltv12: ltv(s.revenue, 12, ret)
+  const services = recurringServices.map((service) => ({
+    ...service,
+    monthlyRevenue: service.negotiatedPrice || getRecurringPrice(service),
+    ltv12: ltv(service.negotiatedPrice || getRecurringPrice(service), 12, ret)
   }));
-  const maxSvc = Math.max(...services.map((s) => s.ltv12), 1);
-
+  const maxSvc = Math.max(...services.map((service) => service.ltv12), 1);
   const churnMonth = Math.ceil(Math.log(0.5) / Math.log(ret.monthly));
 
   return (
@@ -102,87 +108,85 @@ export function LTVScreen({ prospect, proposals, onBack }) {
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Valor de Cliente (LTV)</div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
+        <Button variant="ghost" size="sm" onClick={onBack}>Volver</Button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 16 : 24, display: "flex", flexDirection: "column", gap: 20 }}>
-        {/* Source banner */}
         {activeProposal && proposalMonthly > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "rgba(0,255,136,0.06)", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, fontSize: 12, color: theme.muted }}>
-            <span style={{ fontSize: 16 }}>📄</span>
-            <span>Base mensual tomada de <strong style={{ color: theme.accent }}>Propuesta v{activeProposal.version}</strong> — mensual recurrente negociado.</span>
+            <span style={{ fontSize: 16 }}>P</span>
+            <span>Base mensual tomada de <strong style={{ color: theme.accent }}>Propuesta v{activeProposal.version}</strong>. Solo estamos contando servicios recurrentes.</span>
           </div>
         )}
-        {/* Scenario selector */}
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {Object.entries(RETENTION).map(([key, cfg]) => (
             <button
               key={key}
               onClick={() => setScenario(key)}
               style={{
-                padding: "7px 18px", borderRadius: 8, fontSize: 12, fontWeight: scenario === key ? 700 : 400, cursor: "pointer",
+                padding: "7px 18px",
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: scenario === key ? 700 : 400,
+                cursor: "pointer",
                 background: scenario === key ? `${cfg.color}18` : "rgba(255,255,255,0.04)",
                 color: scenario === key ? cfg.color : theme.muted,
                 border: `1px solid ${scenario === key ? `${cfg.color}44` : theme.border}`
               }}
             >
               {cfg.label}
-              <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.7 }}>{Math.round(ret.monthly * 100)}% ret./mes</span>
+              <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.7 }}>{Math.round(cfg.monthly * 100)}% ret./mes</span>
             </button>
           ))}
           <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", alignItems: "center", fontSize: 11, color: theme.dim, width: isMobile ? "100%" : "auto" }}>
-            Base mensual: <strong style={{ color: theme.text, marginLeft: 5 }}>{formatCurrency(monthly)}</strong>
+            Base mensual recurrente: <strong style={{ color: theme.text, marginLeft: 5 }}>{formatCurrency(monthly)}</strong>
           </div>
         </div>
 
-        {/* Hero metric */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
           {[
-            { label: "LTV 3 meses",  value: ltv3,  sub: "trimestre" },
-            { label: "LTV 6 meses",  value: ltv6,  sub: "semestre" },
+            { label: "LTV 3 meses", value: ltv3, sub: "trimestre" },
+            { label: "LTV 6 meses", value: ltv6, sub: "semestre" },
             { label: "LTV 12 meses", value: ltv12, sub: "anual" },
-            { label: "LTV 24 meses", value: ltv24, sub: "2 años" }
-          ].map((m, i) => (
-            <div key={m.label} style={{ background: i === 2 ? `linear-gradient(135deg, ${theme.s2}, rgba(0,255,136,0.05))` : theme.s2, border: `1px solid ${i === 2 ? theme.accentBorder : theme.border}`, borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{m.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: i === 2 ? theme.accent : ret.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{formatCurrency(m.value)}</div>
-              <div style={{ fontSize: 10, color: theme.muted, marginTop: 4 }}>{m.sub}</div>
+            { label: "LTV 24 meses", value: ltv24, sub: "2 anos" }
+          ].map((metric, index) => (
+            <div key={metric.label} style={{ background: index === 2 ? `linear-gradient(135deg, ${theme.s2}, rgba(0,255,136,0.05))` : theme.s2, border: `1px solid ${index === 2 ? theme.accentBorder : theme.border}`, borderRadius: 12, padding: "16px 18px" }}>
+              <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{metric.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: index === 2 ? theme.accent : ret.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{formatCurrency(metric.value)}</div>
+              <div style={{ fontSize: 10, color: theme.muted, marginTop: 4 }}>{metric.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Timeline bars */}
         <Card style={{ padding: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 18 }}>Proyección acumulada</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 18 }}>Proyeccion acumulada</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Bar value={ltv3}  max={maxVal} color={ret.color} label="3 meses"  />
-            <Bar value={ltv6}  max={maxVal} color={ret.color} label="6 meses"  />
+            <Bar value={ltv3} max={maxVal} color={ret.color} label="3 meses" />
+            <Bar value={ltv6} max={maxVal} color={ret.color} label="6 meses" />
             <Bar value={ltv12} max={maxVal} color={ret.color} label="12 meses" />
             <Bar value={ltv24} max={maxVal} color={ret.color} label="24 meses" />
           </div>
           <div style={{ marginTop: 16, padding: "10px 14px", background: theme.s3, borderRadius: 8, fontSize: 11, color: theme.muted }}>
-            Con retención del {Math.round(ret.monthly * 100)}% mensual, el cliente deja de ser rentable alrededor del mes <strong style={{ color: theme.text }}>{churnMonth}</strong> en el escenario {ret.label.toLowerCase()}.
+            Con retencion del {Math.round(ret.monthly * 100)}% mensual, el cliente deja de ser rentable alrededor del mes <strong style={{ color: theme.text }}>{churnMonth}</strong> en el escenario {ret.label.toLowerCase()}.
           </div>
         </Card>
 
-        {/* Per-service LTV */}
         {services.length > 0 && (
           <Card style={{ padding: 24 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 18 }}>LTV por servicio — 12 meses</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 18 }}>LTV por servicio recurrente - 12 meses</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {services.map((s) => (
-                <Bar key={s.service} value={s.ltv12} max={maxSvc} color={ret.color} label={`${s.icon} ${s.service}`} sub="/12m" />
+              {services.map((service) => (
+                <Bar key={service.id || service.service} value={service.ltv12} max={maxSvc} color={ret.color} label={`${service.icon || ""} ${service.service}`.trim()} sub={formatServicePricing(service)} />
               ))}
             </div>
           </Card>
         )}
 
-        {/* Upsell opportunities */}
         <div style={{ padding: "16px 20px", background: theme.accentBg, border: `1px solid ${theme.accentBorder}`, borderRadius: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: theme.accent, marginBottom: 8 }}>Potencial de upsell</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.accent, marginBottom: 8 }}>Lectura correcta para pagos unicos</div>
           <div style={{ fontSize: 13, color: theme.muted, lineHeight: 1.65 }}>
-            Si agregas un segundo servicio al mes 3 y un tercero al mes 6, el LTV a 12 meses puede crecer hasta{" "}
-            <strong style={{ color: theme.text }}>{formatCurrency(Math.round(ltv12 * 1.9))}</strong> en el escenario {ret.label.toLowerCase()}.
+            El landing o sitio inicial no entra en LTV porque no es una mensualidad. Lo que si construye LTV es todo lo que se queda activo despues: hosting, mantenimiento, ads, SEO o gestion continua.
           </div>
         </div>
       </div>

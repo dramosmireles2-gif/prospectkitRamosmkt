@@ -3,6 +3,7 @@ import { Button, Card, EmptyState } from "../components/Primitives";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { formatServicePricing } from "../services/serviceCatalog";
 
 const templates = [
   { id: "score-card",     label: "Score Card",          desc: "Oportunidad detectada · Landscape" },
@@ -84,7 +85,7 @@ function AssetTemplate({ id, prospect, format }) {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{service.confidence}% confianza</span>
-                  <span style={{ fontSize: 15, fontWeight: 900, color }}>{formatCurrency(service.revenue)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 900, color }}>{formatServicePricing(service)}</span>
                 </div>
               </div>
             ))}
@@ -181,7 +182,7 @@ function AssetTemplate({ id, prospect, format }) {
                   <div key={service.service} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 16 }}>{service.icon}</span>
                     <span style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>{service.service}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color, marginLeft: 4 }}>{formatCurrency(service.revenue)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color, marginLeft: 4 }}>{formatServicePricing(service)}</span>
                   </div>
                 ))}
               </div>
@@ -240,14 +241,14 @@ function AssetTemplate({ id, prospect, format }) {
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0" }}>{service.service}</div>
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{service.confidence}% confianza</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color }}>{formatCurrency(service.revenue)}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color }}>{formatServicePricing(service)}</div>
               </div>
             ))}
             <div style={{ marginTop: 16, padding: "14px 18px", background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.2)", borderRadius: 10 }}>
-              <div style={{ fontSize: 10, color: accent, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 6 }}>Potencial de ingresos</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>
-                {formatCurrency(analysis?.revenue.min || 0)} - {formatCurrency(analysis?.revenue.max || 0)} <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>/ mes</span>
-              </div>
+              <div style={{ fontSize: 10, color: accent, textTransform: "uppercase", letterSpacing: "0.09em", fontWeight: 700, marginBottom: 6 }}>Potencial comercial</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#f0f0f0" }}>{formatCurrency(analysis?.pricingSummary?.oneTime?.min || 0)} inicial</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: accent, marginTop: 4 }}>{formatCurrency(analysis?.pricingSummary?.monthly?.min || 0)} mensual</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Valor 1er ano: {formatCurrency(analysis?.pricingSummary?.firstYear?.min || analysis?.revenue.min || 0)}</div>
             </div>
           </div>
         </div>

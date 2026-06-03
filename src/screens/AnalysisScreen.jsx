@@ -2,6 +2,7 @@ import { Button, Card, EmptyState, LikelihoodBar, ScoreRing, Tag, TemperatureBad
 import { opportunityConfig, theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { formatServicePricing, getServiceNote } from "../services/serviceCatalog";
 
 function printAnalysis() {
   const styleId = "prospect-print-style";
@@ -29,7 +30,12 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
   }
 
   const analysis = prospect.analysis;
-  const tagColors = { "Quick Win": theme.accent, Revenue: theme.yellow, Proyecto: theme.blue, Retención: theme.purple };
+  const pricingSummary = analysis?.pricingSummary || {
+    oneTime: { min: 0, max: 0 },
+    monthly: { min: 0, max: 0 },
+    firstYear: { min: analysis?.revenue?.min || 0, max: analysis?.revenue?.max || 0 }
+  };
+  const tagColors = { "Quick Win": theme.accent, Revenue: theme.yellow, Proyecto: theme.blue, Retención: theme.purple, Retencion: theme.purple };
   const priorityColors = { urgente: theme.red, alta: theme.yellow, media: theme.blue };
 
   if (!analysis) {
@@ -190,26 +196,45 @@ export function AnalysisScreen({ prospect, onGenerateAnalysis, onRegenerateAnaly
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginBottom: 3 }}>{service.service}</div>
                   <div style={{ fontSize: 12, color: theme.muted }}>{service.desc}</div>
+                  <div style={{ fontSize: 11, color: theme.dim, marginTop: 6 }}>{getServiceNote(service)}</div>
                 </div>
                 <div style={{ textAlign: isMobile ? "left" : "right", flexShrink: 0 }}>
                   <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Confianza</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: service.confidence >= 90 ? theme.accent : theme.yellow }}>{service.confidence}%</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: theme.accent }}>{formatCurrency(service.revenue)}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: theme.accent, marginTop: 4 }}>{formatServicePricing(service)}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr", gap: 14 }}>
           <Card style={{ padding: 20, background: `linear-gradient(135deg, ${theme.s2} 0%, rgba(0,255,136,0.04) 100%)`, border: `1px solid ${theme.accentBorder}` }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 10 }}>
-              Potencial de ingresos
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.accent, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 14 }}>
+              Potencial comercial
             </div>
-            <div style={{ fontSize: 13, color: theme.muted, marginBottom: 6 }}>Este prospecto representa entre</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: theme.text, letterSpacing: "-0.02em" }}>
-              {formatCurrency(analysis.revenue.min)} - {formatCurrency(analysis.revenue.max)}
-              <span style={{ fontSize: 14, fontWeight: 400, color: theme.muted }}> / mes</span>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>Pago inicial</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: theme.text, letterSpacing: "-0.02em" }}>
+                  {formatCurrency(pricingSummary.oneTime.min)}
+                </div>
+                <div style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>Sitio, setup o proyecto unico</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>Mensual estimado</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: theme.accent, letterSpacing: "-0.02em" }}>
+                  {formatCurrency(pricingSummary.monthly.min)}
+                </div>
+                <div style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>Mantenimiento, ads y gestion recurrente</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>Valor 1er ano</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: theme.yellow, letterSpacing: "-0.02em" }}>
+                  {formatCurrency(pricingSummary.firstYear.min)} - {formatCurrency(pricingSummary.firstYear.max)}
+                </div>
+                <div style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>Mezcla de pago inicial + 12 meses recurrentes</div>
+              </div>
             </div>
           </Card>
 

@@ -28,9 +28,10 @@
  * @property {string} scoreLabel
  * @property {Array<{label: string, value: number, note: string}>} scoreBreakdown
  * @property {Array<{name: string, critical: boolean}>} missingFeatures
- * @property {Array<{service: string, confidence: number, revenue: number, unit: string, icon: string, desc: string}>} recommendedServices
+ * @property {Array<{id: string, catalogId: string, service: string, shortService: string, confidence: number, revenue: number, unit: string, icon: string, desc: string, billingType: string, oneTimePrice: number, oneTimeMaxPrice: number, setupPrice: number, setupMaxPrice: number, monthlyPrice: number, monthlyMaxPrice: number, clientMonthlyGain: number, billingNote: string, pricingLabel: string}>} recommendedServices
  * @property {Array<{type: string, title: string, desc: string, priority: string, impact: number}>} opportunities
  * @property {Array<{action: string, impact: string, effort: string, tag: string}>} actionPlan
+ * @property {{oneTime: {min: number, max: number}, monthly: {min: number, max: number}, firstYear: {min: number, max: number}}} pricingSummary
  * @property {{min: number, max: number}} revenue
  * @property {string[]} weaknesses
  * @property {"heuristic" | "ai"} source
@@ -72,6 +73,8 @@
  * @property {number} analyzedProspects
  * @property {number} kitsReady
  * @property {number} revenueMinTotal
+ * @property {number} monthlyPotentialTotal
+ * @property {number} oneTimePotentialTotal
  * @property {Prospect | null} topProspect
  * @property {Prospect[]} rankedProspects
  * @property {Array<{id: string, label: string, desc: string, targetView: string}>} recommendations

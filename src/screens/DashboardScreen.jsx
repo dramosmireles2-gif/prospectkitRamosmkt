@@ -3,6 +3,7 @@ import { theme } from "../app/theme";
 import { formatCompactCurrency } from "../utils/format";
 import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { formatServicePricing } from "../services/serviceCatalog";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;
@@ -363,8 +364,10 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                         }}
                       >
                         <span style={{ fontSize: 15 }}>{service.icon}</span>
-                        <span style={{ flex: 1, fontSize: 13, color: theme.text, fontWeight: 500 }}>{service.service}</span>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: theme.accent }}>{formatCompactCurrency(service.revenue)}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, color: theme.text, fontWeight: 500 }}>{service.service}</div>
+                          <div style={{ fontSize: 10, color: theme.dim, marginTop: 2 }}>{formatServicePricing(service)}</div>
+                        </div>
                         <span style={{ fontSize: 10, color: theme.muted, width: 32, textAlign: "right" }}>{service.confidence}%</span>
                       </div>
                     ))}
@@ -413,7 +416,9 @@ export function DashboardScreen({ prospects, metrics, proposals = [], onOpenView
                 { label: "Prospectos", value: metrics.totalProspects },
                 { label: "Analizados", value: metrics.analyzedProspects },
                 { label: "Kits listos", value: metrics.kitsReady },
-                { label: "Pot. minimo", value: formatCompactCurrency(metrics.revenueMinTotal) }
+                { label: "Valor 1er ano", value: formatCompactCurrency(metrics.revenueMinTotal) },
+                { label: "Mensual est.", value: formatCompactCurrency(metrics.monthlyPotentialTotal || 0) },
+                { label: "Inicial est.", value: formatCompactCurrency(metrics.oneTimePotentialTotal || 0) }
               ].map((item) => (
                 <div key={item.label} style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 9, padding: "12px 14px" }}>
                   <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>

@@ -1,6 +1,7 @@
 import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
 import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore, estimateSalesLikelihoodScore, calcLeadTemperature } from "./heuristics";
+import { summarizeServicePricing } from "./serviceCatalog";
 import { supabase } from "./supabase";
 import { STAGE_CADENCE } from "../app/constants";
 
@@ -8,6 +9,11 @@ function normalizeAnalysis(row) {
   if (!row) {
     return null;
   }
+
+  const recommendedServices = row.recommended_services || [];
+  const pricingSummary = summarizeServicePricing(recommendedServices);
+  const revenueMin = row.revenue_min || pricingSummary.firstYear.min || 0;
+  const revenueMax = row.revenue_max || pricingSummary.firstYear.max || 0;
 
   return {
     id: row.id,
@@ -18,12 +24,13 @@ function normalizeAnalysis(row) {
     scoreLabel: row.score_label,
     scoreBreakdown: row.score_breakdown || [],
     missingFeatures: row.missing_features || [],
-    recommendedServices: row.recommended_services || [],
+    recommendedServices,
     opportunities: row.opportunities || [],
     actionPlan: row.action_plan || [],
+    pricingSummary,
     revenue: {
-      min: row.revenue_min || 0,
-      max: row.revenue_max || 0
+      min: revenueMin,
+      max: revenueMax
     },
     weaknesses: row.weaknesses || [],
     source: row.source
@@ -301,7 +308,9 @@ export function buildDashboardMetrics(prospects) {
   const totalProspects = prospects.length;
   const analyzedProspects = prospects.filter((prospect) => prospect.analysis).length;
   const kitsReady = prospects.filter((prospect) => prospect.kit).length;
-  const revenueMinTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.revenue.min || 0), 0);
+  const revenueMinTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue.min || 0), 0);
+  const monthlyPotentialTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.monthly?.min || 0), 0);
+  const oneTimePotentialTotal = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.oneTime?.min || 0), 0);
   const topProspect = rankedProspects.find((prospect) => prospect.analysis) || rankedProspects[0] || null;
 
   const recommendations = rankedProspects.slice(0, 4).map((prospect) => ({
@@ -316,6 +325,8 @@ export function buildDashboardMetrics(prospects) {
     analyzedProspects,
     kitsReady,
     revenueMinTotal,
+    monthlyPotentialTotal,
+    oneTimePotentialTotal,
     topProspect,
     rankedProspects,
     recommendations

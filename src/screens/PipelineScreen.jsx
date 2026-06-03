@@ -56,9 +56,9 @@ function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile
       {/* Revenue estimate */}
       {prospect.analysis?.revenue?.min > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, color: theme.muted }}>Valor estimado:</span>
+          <span style={{ fontSize: 10, color: theme.muted }}>Valor 1er ano:</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: theme.accent }}>
-            {formatCurrency(prospect.analysis.revenue.min)}
+            {formatCurrency(prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis.revenue.min)}
           </span>
         </div>
       )}
@@ -105,7 +105,7 @@ function PipelineCard({ prospect, onSelect, onDragStart, onUpdateStage, isMobile
 }
 
 function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage }) {
-  const totalRevenue = prospects.reduce((sum, p) => sum + (p.analysis?.revenue?.min || 0), 0);
+  const totalRevenue = prospects.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue?.min || 0), 0);
 
   return (
     <div
@@ -141,7 +141,7 @@ function PipelineColumn({ stage, prospects, onDragOver, onDrop, onSelect, onDrag
         </div>
         {totalRevenue > 0 && (
           <div style={{ fontSize: 10, color: theme.muted, paddingLeft: 15 }}>
-            {formatCurrency(totalRevenue)} est.
+            {formatCurrency(totalRevenue)} 1er ano est.
           </div>
         )}
       </div>
@@ -178,7 +178,7 @@ function PipelineMetrics({ prospects, isMobile = false }) {
   const activos = prospects.filter(p => !["ganado", "perdido"].includes(p.pipelineStage)).length;
   const revenueTotal = prospects
     .filter(p => !["perdido"].includes(p.pipelineStage))
-    .reduce((sum, p) => sum + (p.analysis?.revenue?.min || 0), 0);
+    .reduce((sum, p) => sum + (p.analysis?.pricingSummary?.firstYear?.min || p.analysis?.revenue?.min || 0), 0);
   const tasaCierre = total > 0 ? Math.round((ganados / total) * 100) : 0;
   const calientes = prospects.filter(p => ["caliente", "urgente"].includes(p.leadTemperature)).length;
 
@@ -187,7 +187,7 @@ function PipelineMetrics({ prospects, isMobile = false }) {
     { label: "Leads calientes",    value: calientes, color: theme.red },
     { label: "Ganados",            value: ganados,  color: theme.accent },
     { label: "Tasa de cierre",     value: `${tasaCierre}%`, color: theme.yellow },
-    { label: "Pipeline total",     value: formatCurrency(revenueTotal), color: theme.purple }
+    { label: "Pipeline 1er ano",   value: formatCurrency(revenueTotal), color: theme.purple }
   ];
 
   if (isMobile) {

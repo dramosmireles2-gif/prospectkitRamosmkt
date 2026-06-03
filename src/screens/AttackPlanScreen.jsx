@@ -93,8 +93,8 @@ function ProspectRow({ prospect, rank, onSelect, isMobile }) {
 
       {prospect.analysis?.revenue?.min > 0 ? (
         <div style={{ textAlign: isMobile ? "left" : "right", flexShrink: 0, minWidth: 80 }}>
-          <div style={{ fontSize: 10, color: theme.dim }}>Potencial</div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: theme.accent }}>{formatCurrency(prospect.analysis.revenue.min)}</div>
+          <div style={{ fontSize: 10, color: theme.dim }}>Valor 1er ano</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: theme.accent }}>{formatCurrency(prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis.revenue.min)}</div>
         </div>
       ) : null}
 
@@ -194,13 +194,13 @@ export function AttackPlanScreen({ prospects, onSelectProspect }) {
 
   const overdueCount = active.filter((prospect) => prospect.nextActionDate && prospect.nextActionDate < todayDate).length;
   const noActionCount = active.filter((prospect) => !prospect.nextActionType).length;
-  const totalRevenue = today.reduce((sum, prospect) => sum + (prospect.analysis?.revenue?.min || 0), 0);
+  const totalRevenue = today.reduce((sum, prospect) => sum + (prospect.analysis?.pricingSummary?.firstYear?.min || prospect.analysis?.revenue?.min || 0), 0);
   const metricItems = [
     { label: "Actuar hoy", value: today.length, color: theme.red },
     { label: "Esta semana", value: week.length, color: theme.yellow },
     { label: "Acciones vencidas", value: overdueCount, color: theme.red },
     { label: "Sin accion prog.", value: noActionCount, color: theme.muted },
-    { label: "Revenue en juego", value: formatCurrency(totalRevenue), color: theme.accent }
+    { label: "Valor 1er ano", value: formatCurrency(totalRevenue), color: theme.accent }
   ];
 
   return (
