@@ -10,6 +10,7 @@ export function WorkspaceProvider({ children }) {
   const [workspace, setWorkspace] = useState(null);
   const [membership, setMembership] = useState(null);
   const [loading, setLoading] = useState(Boolean(hasConfig));
+  const [debugError, setDebugError] = useState("");
   const timeoutRef = useRef(null);
 
   async function refreshWorkspace() {
@@ -21,17 +22,17 @@ export function WorkspaceProvider({ children }) {
     }
 
     setLoading(true);
+    setDebugError("");
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       console.error("Workspace load timeout");
       setLoading(false);
     }, 15000);
 
-    // Retry up to 4 times. On attempt 2, force a session refresh to fix expired tokens.
+    const errors = [];
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
         if (attempt === 2) {
-          // Force Supabase to refresh the JWT before retrying
           await supabase.auth.refreshSession();
         }
         const result = await getCurrentWorkspace(user.id);
@@ -42,12 +43,15 @@ export function WorkspaceProvider({ children }) {
           setLoading(false);
           return result;
         }
+        errors.push(`intento ${attempt + 1}: sin workspace (userId=${user.id})`);
       } catch (error) {
+        errors.push(`intento ${attempt + 1}: ${error.message}`);
         console.error(`Workspace load attempt ${attempt + 1} failed`, error);
       }
       if (attempt < 3) await new Promise((r) => setTimeout(r, 1500));
     }
 
+    setDebugError(errors.join(" | "));
     setWorkspace(null);
     setMembership(null);
     clearTimeout(timeoutRef.current);
@@ -63,7 +67,7 @@ export function WorkspaceProvider({ children }) {
   }, [hasConfig, user?.id]);
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, membership, loading, refreshWorkspace }}>
+    <WorkspaceContext.Provider value={{ workspace, membership, loading, refreshWorkspace, debugError }}>
       {children}
     </WorkspaceContext.Provider>
   );

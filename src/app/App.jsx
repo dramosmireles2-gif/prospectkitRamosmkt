@@ -49,13 +49,13 @@ function FullscreenLoader({ label }) {
   );
 }
 
-function WorkspaceReadyScreen({ onRetry, onSignOut }) {
+function WorkspaceReadyScreen({ onRetry, onSignOut, debugError }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: theme.bg }}>
       <div style={{ width: "min(620px, 100%)" }}>
         <EmptyState
           title="La cuenta existe, pero el workspace aun no aparece"
-          description="Esto suele pasar cuando todavia no corriste el SQL de Supabase o cuando el trigger de alta no termino de crear profile, workspace y membership."
+          description={debugError || "Esto suele pasar cuando todavia no corriste el SQL de Supabase o cuando el trigger de alta no termino de crear profile, workspace y membership."}
           actions={
             <>
               <Button variant="primary" onClick={onRetry}>
@@ -78,7 +78,7 @@ function sortProspects(list) {
 
 function AppContent() {
   const { hasConfig, session, profile, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
+  const { workspace, loading: workspaceLoading, refreshWorkspace, debugError } = useWorkspace();
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [prospects, setProspects] = useState([]);
   const [selectedProspectId, setSelectedProspectId] = useState(null);
@@ -334,7 +334,7 @@ function AppContent() {
   }
 
   if (!workspace) {
-    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} />;
+    return <WorkspaceReadyScreen onRetry={refreshWorkspace} onSignOut={signOut} debugError={debugError} />;
   }
 
   const canAccessAssets = canUse(FEATURES.ASSET_EXPORT, workspace);
