@@ -1,6 +1,6 @@
 import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
-import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore } from "./heuristics";
+import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore, estimateSalesLikelihoodScore, calcLeadTemperature } from "./heuristics";
 import { supabase } from "./supabase";
 import { STAGE_CADENCE } from "../app/constants";
 
@@ -106,6 +106,8 @@ export async function listProspects(workspaceId, { limit = 50, offset = 0 } = {}
 
 export async function createProspect(workspaceId, input) {
   const opportunityScore = estimateOpportunityScore(input);
+  const salesLikelihoodScore = estimateSalesLikelihoodScore(input);
+  const leadTemperature = calcLeadTemperature(salesLikelihoodScore);
   const payload = {
     workspace_id: workspaceId,
     name: input.name.trim(),
