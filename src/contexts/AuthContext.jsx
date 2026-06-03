@@ -17,62 +17,48 @@ export function AuthProvider({ children }) {
     }
 
     let isMounted = true;
+    let resolved = false;
 
     const timeoutId = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && !resolved) {
         console.error("Auth bootstrap timeout — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
+        resolved = true;
         setLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
-    async function bootstrap() {
+    async function loadProfile(userId) {
       try {
-        const {
-          data: { session: currentSession }
-        } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          try {
-            const nextProfile = await getProfile(currentSession.user.id);
-            if (isMounted) setProfile(nextProfile);
-          } catch (error) {
-            console.error("Error loading profile", error);
-          }
-        }
+        const nextProfile = await getProfile(userId);
+        if (isMounted) setProfile(nextProfile);
       } catch (error) {
-        console.error("Auth bootstrap failed", error);
-      } finally {
-        clearTimeout(timeoutId);
-        if (isMounted) setLoading(false);
+        console.error("Error loading profile", error);
       }
     }
 
-    bootstrap();
-
+    // Use onAuthStateChange as the single source of truth.
+    // INITIAL_SESSION fires first with the refreshed token (never expired).
+    // This avoids the race condition where getSession() returns a stale cached token.
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (!isMounted) return;
+
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
-        try {
-          const nextProfile = await getProfile(nextSession.user.id);
-          setProfile(nextProfile);
-        } catch (error) {
-          console.error("Error refreshing profile", error);
-          setProfile(null);
-        }
+        await loadProfile(nextSession.user.id);
       } else {
         setProfile(null);
       }
 
-      setLoading(false);
+      // Resolve loading on first event (INITIAL_SESSION, SIGNED_IN, etc.)
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        setLoading(false);
+      }
     });
 
     return () => {
