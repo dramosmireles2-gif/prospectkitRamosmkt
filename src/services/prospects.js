@@ -2,6 +2,7 @@ import { demoProspects } from "../demo/seedData";
 import { formatRelativeTime } from "../utils/format";
 import { generateProspectAnalysis, generateProspectKit, estimateOpportunityScore } from "./heuristics";
 import { supabase } from "./supabase";
+import { STAGE_CADENCE } from "../app/constants";
 
 function normalizeAnalysis(row) {
   if (!row) {
@@ -62,6 +63,8 @@ function normalizeProspect(row) {
     salesLikelihoodScore: row.sales_likelihood_score || 0,
     leadTemperature: row.lead_temperature || "frio",
     pipelineStage: row.pipeline_stage || "lead",
+    nextActionType: row.next_action_type || null,
+    nextActionDate: row.next_action_date || null,
     lastActivityAt: row.last_activity_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -145,9 +148,28 @@ export async function updateProspect(input) {
 }
 
 export async function updatePipelineStage(prospectId, stage) {
+  const cadence = STAGE_CADENCE[stage];
+  const nextDate = cadence
+    ? new Date(Date.now() + cadence.days * 86400000).toISOString().split("T")[0]
+    : null;
   const { error } = await supabase
     .from("prospects")
-    .update({ pipeline_stage: stage, last_activity_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({
+      pipeline_stage: stage,
+      next_action_type: cadence ? cadence.type : null,
+      next_action_date: nextDate,
+      last_activity_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", prospectId);
+  if (error) throw error;
+  return fetchProspectById(prospectId);
+}
+
+export async function updateNextAction(prospectId, { type, date }) {
+  const { error } = await supabase
+    .from("prospects")
+    .update({ next_action_type: type || null, next_action_date: date || null, updated_at: new Date().toISOString() })
     .eq("id", prospectId);
   if (error) throw error;
   return fetchProspectById(prospectId);

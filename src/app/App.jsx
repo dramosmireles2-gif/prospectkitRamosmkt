@@ -14,7 +14,8 @@ import {
   regenerateProspectKit,
   seedDemoWorkspace,
   updateProspect,
-  updatePipelineStage
+  updatePipelineStage,
+  updateNextAction
 } from "../services/prospects";
 import { VIEWS, PROSPECT_VIEWS } from "./constants";
 import { theme } from "./theme";
@@ -283,6 +284,17 @@ function AppContent() {
     }
   }
 
+  async function handleUpdateNextAction({ type, date }) {
+    if (!selectedProspect) return;
+    try {
+      const nextProspect = await updateNextAction(selectedProspect.id, { type, date });
+      upsertProspect(nextProspect);
+      setToast({ tone: "success", message: "Próxima acción guardada." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo guardar la acción." });
+    }
+  }
+
   async function handleUpdatePipelineStage(prospectId, stage) {
     try {
       const nextProspect = await updatePipelineStage(prospectId, stage);
@@ -368,6 +380,7 @@ function AppContent() {
         onMarkContacted={handleMarkContacted}
         onDelete={() => selectedProspect && handleDeleteProspect(selectedProspect)}
         onUpdateNotes={handleUpdateNotes}
+        onUpdateNextAction={(action) => handleUpdateNextAction(action)}
       />
     );
   }

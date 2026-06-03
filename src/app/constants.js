@@ -58,3 +58,23 @@ export const VALIDATION = {
   EMAIL_PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   URL_PATTERN: /^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/i
 };
+
+export const NEXT_ACTION_TYPES = [
+  { id: "llamar",      label: "Llamar",         icon: "📞" },
+  { id: "whatsapp",    label: "WhatsApp",        icon: "💬" },
+  { id: "email",       label: "Email",           icon: "✉️" },
+  { id: "reunion",     label: "Agendar reunión", icon: "📅" },
+  { id: "propuesta",   label: "Enviar propuesta",icon: "📋" },
+  { id: "seguimiento", label: "Seguimiento",     icon: "🔄" }
+];
+
+export const STAGE_CADENCE = {
+  lead:        { type: "llamar",      days: 1 },
+  contactado:  { type: "seguimiento", days: 2 },
+  respondio:   { type: "reunion",     days: 1 },
+  reunion:     { type: "propuesta",   days: 3 },
+  propuesta:   { type: "seguimiento", days: 2 },
+  negociacion: { type: "seguimiento", days: 1 },
+  ganado:      null,
+  perdido:     null
+};

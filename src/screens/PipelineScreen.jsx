@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { TemperatureBadge } from "../components/Primitives";
-import { PIPELINE_STAGES } from "../app/constants";
+import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 
@@ -69,6 +69,23 @@ function PipelineCard({ prospect, onSelect, onDragStart }) {
         {prospect.whatsapp  && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: theme.s3, color: theme.muted, border: `1px solid ${theme.border}` }}>💬</span>}
         {prospect.kit       && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: theme.accentBg, color: theme.accent, border: `1px solid ${theme.accentBorder}` }}>Kit ✓</span>}
       </div>
+
+      {/* Next action */}
+      {prospect.nextActionType && prospect.nextActionDate ? (() => {
+        const today = new Date().toISOString().split("T")[0];
+        const overdue = prospect.nextActionDate < today;
+        const isToday = prospect.nextActionDate === today;
+        const color = overdue ? theme.red : isToday ? theme.yellow : theme.muted;
+        const cfg = NEXT_ACTION_TYPES.find(t => t.id === prospect.nextActionType);
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color }}>
+            <span>{cfg?.icon || "📋"}</span>
+            <span style={{ fontWeight: overdue || isToday ? 700 : 400 }}>
+              {overdue ? "⚠ " : ""}{cfg?.label || prospect.nextActionType} · {prospect.nextActionDate}
+            </span>
+          </div>
+        );
+      })() : null}
     </div>
   );
 }
