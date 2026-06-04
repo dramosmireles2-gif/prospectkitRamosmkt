@@ -1,290 +1,408 @@
-import { useState } from "react";
-import { theme } from "../../app/theme";
-import { formatCurrency } from "../../utils/format";
-import { formatServicePricing } from "../../services/serviceCatalog";
-import { getActiveProposal, getProspectCommercialSnapshot } from "../../services/proposals";
-import { EmptyState, Button } from "../../components/Primitives";
+import { useRef, useState } from "react";
+import { Button } from "../../components/Primitives";
 import { useAssetExport } from "./useAssetExport";
-import { R, BASE, Brand, Glow } from "./shared";
+import { R, BASE, FORMATS, Brand, Glow } from "./shared";
+import { PROJECT_TYPES, detectProjectType } from "./constants";
+
+const RMKT_PHONE = "8148078309";
+const RMKT_PHONE_DISPLAY = "814 807 8309";
+const RMKT_WA = `https://wa.me/52${RMKT_PHONE}`;
 
 const TEMPLATES = [
-  { id: "diagnostico-digital", label: "Diagnóstico Digital", desc: "Score, top 3 servicios y problemas críticos detectados" },
-  { id: "crecimiento-rapido",  label: "Quick Wins",          desc: "3 oportunidades de crecimiento rápido con impacto" },
-  { id: "propuesta-inicial",   label: "Propuesta Inicial",   desc: "Servicios recomendados, precios y CTA de cierre" },
+  { id: "flyer-oscuro", label: "Flyer Oscuro", desc: "Fondo negro, copy de impacto" },
+  { id: "flyer-claro",  label: "Flyer Claro",  desc: "Fondo blanco, estilo limpio" },
 ];
 
-function ProspectingTemplate({ id, prospect, format, pricingSnapshot }) {
-  const analysis = prospect.analysis;
-  const displayServices = pricingSnapshot?.services?.length ? pricingSnapshot.services : analysis?.recommendedServices || [];
-  const displayPricingSummary = pricingSnapshot?.pricingSummary || analysis?.pricingSummary || { oneTime: { min: 0 }, monthly: { min: 0 }, firstYear: { min: analysis?.revenue?.min || 0 } };
-  const score = prospect.opportunityScore || 0;
-  const scoreColor = score >= 85 ? R.accent : score >= 70 ? R.yellow : R.blue;
-  const isStory = format?.id === "story";
-  const isLandscape = format?.id === "landscape";
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-  if (id === "diagnostico-digital") {
-    const missingFeatures = analysis?.missingFeatures || [];
-    const critical = missingFeatures.filter(f => f.critical).slice(0, isStory ? 2 : 3);
-    const topServices = displayServices.slice(0, isStory ? 2 : 3);
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.red} top={-60} right={-60} size={300} />
-        <Glow color={R.accent} bottom={-60} left={-60} size={260} />
-        {/* Header */}
-        <div style={{ padding: isStory ? "48px 56px 24px" : "32px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <div style={{ padding: "4px 12px", borderRadius: 20, background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`, color: scoreColor, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Score {score}/100
-              </div>
-            </div>
-            <div style={{ fontSize: isStory ? 40 : 30, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
-              Diagnóstico digital de
-            </div>
-            <div style={{ fontSize: isStory ? 40 : 30, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
-              {prospect.name}
-            </div>
+function HookText({ hook, accent, dark = true }) {
+  const color = dark ? "#ffffff" : "#111111";
+  const lines = hook.split("\n");
+  return (
+    <div style={{ lineHeight: 1.05 }}>
+      {lines.map((line, i) => {
+        const isAccent = line.toUpperCase().includes(accent.toUpperCase());
+        return (
+          <div key={i} style={{ fontSize: "inherit", fontWeight: 900, color: isAccent ? R.accent : color, letterSpacing: "-0.03em" }}>
+            {line}
           </div>
-          <Brand size="md" />
-        </div>
-        {/* Body */}
-        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 18 }}>
-          {/* Problems column */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: R.red, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Problemas críticos</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {critical.length > 0 ? critical.map(f => (
-                <div key={f.name} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: "rgba(255,68,85,0.07)", border: "1px solid rgba(255,68,85,0.2)", borderRadius: 10 }}>
-                  <span style={{ color: R.red, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>×</span>
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>{f.name}</span>
-                </div>
-              )) : (
-                <div style={{ fontSize: 13, color: R.muted, padding: "10px 14px" }}>Sin problemas críticos detectados.</div>
-              )}
-            </div>
-          </div>
-          {/* Opportunities column */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Top servicios recomendados</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {topServices.map(s => (
-                <div key={s.service} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "rgba(0,255,136,0.05)", border: "1px solid rgba(0,255,136,0.15)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 20 }}>{s.icon || "🚀"}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: R.text }}>{s.service}</div>
-                    <div style={{ fontSize: 12, color: R.accent, fontWeight: 700 }}>{formatServicePricing(s)}</div>
-                  </div>
-                  <span style={{ color: R.accent, fontSize: 16 }}>✓</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        {/* Footer */}
-        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
-          <div style={{ fontSize: 13, color: R.muted }}>Potencial primer año: <strong style={{ color: R.text }}>{formatCurrency(displayPricingSummary.firstYear?.min || 0)}</strong></div>
-          <div style={{ padding: "10px 22px", borderRadius: 8, background: R.accent, color: "#000", fontWeight: 800, fontSize: 13 }}>
-            Ver informe completo
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "crecimiento-rapido") {
-    const wins = (analysis?.opportunities?.length ? analysis.opportunities.slice(0, isStory ? 2 : 3) : displayServices.slice(0, isStory ? 2 : 3));
-    const isOppObj = wins.length > 0 && wins[0] && typeof wins[0] === "object" && !wins[0].service;
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.accent} top={-60} left={-60} size={340} />
-        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "rgba(0,255,136,0.1)", border: "1px solid rgba(0,255,136,0.25)", color: R.accent, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
-              Quick Wins detectados
-            </div>
-            <div style={{ fontSize: isStory ? 44 : 34, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-              {isStory ? 2 : 3} oportunidades para <span style={{ color: R.accent }}>{prospect.name}</span>
-            </div>
-          </div>
-          <Brand size="md" />
-        </div>
-        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 16 }}>
-          {wins.map((item, i) => {
-            const isService = !isOppObj;
-            const name = isService ? item.service : (item.title || item.name || "Oportunidad");
-            const icon = isService ? (item.icon || "🚀") : "🚀";
-            const price = isService ? formatServicePricing(item) : null;
-            const barW = Math.max(40, 100 - i * 20);
-            return (
-              <div key={name} style={{ flex: 1, padding: "20px", background: "rgba(0,255,136,0.04)", border: "1px solid rgba(0,255,136,0.14)", borderRadius: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 28, lineHeight: 1 }}>{icon}</span>
-                  <div style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(0,255,136,0.15)", color: R.accent, fontSize: 10, fontWeight: 700 }}>Alta prioridad</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: R.text, marginBottom: 6 }}>{name}</div>
-                  {price && <div style={{ fontSize: 20, fontWeight: 900, color: R.accent }}>{price}</div>}
-                </div>
-                {/* Impact bar */}
-                <div>
-                  <div style={{ fontSize: 10, color: R.muted, marginBottom: 4 }}>Impacto estimado</div>
-                  <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2 }}>
-                    <div style={{ height: "100%", width: `${barW}%`, borderRadius: 2, background: `linear-gradient(90deg, ${R.accent}, rgba(0,255,136,0.4))` }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
-          <Brand />
-          <div style={{ fontSize: 14, color: R.muted }}>Podemos empezar esta semana</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "propuesta-inicial") {
-    const items = displayServices.slice(0, isStory ? 3 : 5);
-    const totalFirstYear = displayPricingSummary.firstYear?.min || 0;
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.accent} top={-80} right={-80} size={380} />
-        {/* Header */}
-        <div style={{ padding: isStory ? "48px 56px 24px" : "32px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <div>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Propuesta inicial para</div>
-            <div style={{ fontSize: isStory ? 38 : 28, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em" }}>{prospect.name}</div>
-          </div>
-          <Brand size="md" />
-        </div>
-        {/* Services list */}
-        <div style={{ flex: 1, padding: isStory ? "24px 56px" : "18px 56px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {items.map(s => (
-            <div key={s.service} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
-              <span style={{ fontSize: 20 }}>{s.icon || "🔧"}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: R.text }}>{s.service}</div>
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 900, color: R.accent }}>{formatServicePricing(s)}</div>
-            </div>
-          ))}
-        </div>
-        {/* Total + CTA */}
-        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Total estimado primer año</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: R.text, letterSpacing: "-0.03em" }}>{formatCurrency(totalFirstYear)}</div>
-          </div>
-          <div style={{ padding: "12px 28px", borderRadius: 10, background: R.accent, color: "#000", fontWeight: 800, fontSize: 14 }}>
-            Agenda una llamada →
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+        );
+      })}
+    </div>
+  );
 }
 
-export function ProspectingTab({ prospect, proposals = [], format }) {
-  const [templateId, setTemplateId] = useState("diagnostico-digital");
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const activeProposal = getActiveProposal(proposals);
-  const pricingSnapshot = prospect ? getProspectCommercialSnapshot(prospect, activeProposal) : null;
+function BulletItem({ icon, accent, rest, dark = true }) {
+  const textColor = dark ? "rgba(255,255,255,0.85)" : "#333333";
+  const accentColor = dark ? R.accent : "#16a34a";
+  const bgColor = dark ? "rgba(0,255,136,0.1)" : "#f0fdf4";
+  const borderColor = dark ? "rgba(0,255,136,0.2)" : "#bbf7d0";
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", background: bgColor, border: `1px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ fontSize: 15, color: textColor, lineHeight: 1.4, paddingTop: 6 }}>
+        <span style={{ fontWeight: 700, color: accentColor }}>{accent}</span>{rest}
+      </div>
+    </div>
+  );
+}
 
-  const slugName = prospect?.name?.toLowerCase().replace(/\s+/g, "-") || "rmkt";
-  const { exportRef, downloading, message, download } = useAssetExport({
-    filename: `rmkt-prospecting-${templateId}-${slugName}-${format?.id || "landscape"}`
-  });
+function WACta({ dark = true }) {
+  const bg = dark ? "rgba(37,211,102,0.12)" : "#f0fdf4";
+  const border = dark ? "rgba(37,211,102,0.3)" : "#bbf7d0";
+  const textColor = dark ? "#f0f0f0" : "#111111";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 20px", background: bg, border: `1px solid ${border}`, borderRadius: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>Agenda una asesoría sin compromiso</div>
+        <div style={{ fontSize: 18, fontWeight: 900, color: "#25d366", letterSpacing: "0.02em" }}>{RMKT_PHONE_DISPLAY}</div>
+      </div>
+    </div>
+  );
+}
 
-  const currentTemplate = TEMPLATES.find(t => t.id === templateId) || TEMPLATES[0];
-  const previewScale = Math.min(600 / (format?.w || 1200), 340 / (format?.h || 630));
-  const previewW = (format?.w || 1200) * previewScale;
-  const previewH = (format?.h || 630) * previewScale;
+function ServiceFooter({ dark = true }) {
+  const color = dark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)";
+  const accentColor = dark ? R.accent : "#16a34a";
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 11, color, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+      <span>Diseño Web</span>
+      <span style={{ color: accentColor }}>·</span>
+      <span>Redes Sociales</span>
+      <span style={{ color: accentColor }}>·</span>
+      <span>Apps</span>
+    </div>
+  );
+}
 
-  if (!prospect) {
+// ─── Templates ─────────────────────────────────────────────────────────────────
+
+function FlyerOscuro({ ptype, photoSrc, format }) {
+  const isStory = format?.id === "story";
+  const isSquare = format?.id === "square";
+  const isLandscape = format?.id === "landscape";
+  const hookSize = isStory ? 72 : isSquare ? 64 : 52;
+
+  if (isLandscape) {
     return (
-      <div style={{ flex: 1 }}>
-        <EmptyState title="Selecciona un prospecto" description="Selecciona un prospecto para generar Prospecting Assets." />
+      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "linear-gradient(135deg, #0a0a0f 60%, #0d1a12 100%)" }}>
+        <Glow color={R.accent} top={-100} left={-100} size={500} />
+        {/* Left: content */}
+        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "44px 48px", gap: 20, zIndex: 1 }}>
+          <Brand size="sm" />
+          <div style={{ fontSize: hookSize, ...{} }}>
+            <HookText hook={ptype.hook} accent={ptype.hookAccent} dark />
+          </div>
+          <div style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, maxWidth: 380 }}>
+            {ptype.subheadline.replace(/\n/g, " ")}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+            {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark />)}
+          </div>
+          <WACta dark />
+          <ServiceFooter dark />
+        </div>
+        {/* Right: photo */}
+        <div style={{ flex: 0.8, position: "relative", overflow: "hidden" }}>
+          {photoSrc
+            ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <div style={{ width: "100%", height: "100%", background: "rgba(0,255,136,0.03)", display: "flex", alignItems: "center", justifyContent: "center", borderLeft: "1px dashed rgba(0,255,136,0.1)" }}>
+                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 13 }}>📷<br/>Foto del negocio</div>
+              </div>
+          }
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, #0a0a0f 0%, transparent 30%)" }} />
+        </div>
       </div>
     );
   }
 
+  if (isSquare) {
+    return (
+      <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "linear-gradient(160deg, #0a0a0f 60%, #0d1a12 100%)", padding: "56px 64px" }}>
+        <Glow color={R.accent} top={-80} right={-80} size={400} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+          <Brand size="sm" />
+        </div>
+        <div style={{ fontSize: 68, marginBottom: 20 }}>
+          <HookText hook={ptype.hook} accent={ptype.hookAccent} dark />
+        </div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 28 }}>
+          {ptype.subheadline.replace(/\n/g, " ")}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+          {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark />)}
+        </div>
+        <WACta dark />
+        <div style={{ marginTop: "auto", paddingTop: 20 }}><ServiceFooter dark /></div>
+      </div>
+    );
+  }
+
+  // Story
+  return (
+    <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "linear-gradient(180deg, #0a0a0f 50%, #0d1a12 100%)" }}>
+      <Glow color={R.accent} top={-100} right={-100} size={600} />
+      {/* Photo top half */}
+      <div style={{ height: 680, position: "relative", overflow: "hidden", flexShrink: 0 }}>
+        {photoSrc
+          ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <div style={{ width: "100%", height: "100%", background: "rgba(0,255,136,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 16 }}>📷<br/>Foto del negocio</div>
+            </div>
+        }
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.8) 100%)" }} />
+        <div style={{ position: "absolute", top: 52, left: 56 }}><Brand size="sm" /></div>
+      </div>
+      {/* Content bottom */}
+      <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ fontSize: hookSize }}>
+          <HookText hook={ptype.hook} accent={ptype.hookAccent} dark />
+        </div>
+        <div style={{ fontSize: 17, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+          {ptype.subheadline.replace(/\n/g, " ")}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark />)}
+        </div>
+        <WACta dark />
+        <ServiceFooter dark />
+      </div>
+    </div>
+  );
+}
+
+function FlyerClaro({ ptype, photoSrc, format }) {
+  const isStory = format?.id === "story";
+  const isSquare = format?.id === "square";
+  const isLandscape = format?.id === "landscape";
+  const hookSize = isStory ? 72 : isSquare ? 64 : 52;
+
+  if (isLandscape) {
+    return (
+      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "#ffffff" }}>
+        {/* Left */}
+        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "44px 48px", gap: 20 }}>
+          <Brand size="sm" />
+          <div style={{ fontSize: hookSize }}>
+            <HookText hook={ptype.hook} accent={ptype.hookAccent} dark={false} />
+          </div>
+          <div style={{ fontSize: 15, color: "#555", lineHeight: 1.5, maxWidth: 380 }}>
+            {ptype.subheadline.replace(/\n/g, " ")}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+            {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark={false} />)}
+          </div>
+          <div style={{ background: "#14532d", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>Solicita información</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#25d366" }}>{RMKT_PHONE_DISPLAY}</div>
+            </div>
+            <div style={{ marginLeft: "auto", textAlign: "right" }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>Diseño Web · Redes Sociales · Apps</div>
+            </div>
+          </div>
+        </div>
+        {/* Right photo */}
+        <div style={{ flex: 0.8, position: "relative", overflow: "hidden" }}>
+          {photoSrc
+            ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <div style={{ width: "100%", height: "100%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ textAlign: "center", color: "#86efac", fontSize: 13 }}>📷<br/>Foto del negocio</div>
+              </div>
+          }
+        </div>
+      </div>
+    );
+  }
+
+  if (isSquare) {
+    return (
+      <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "#ffffff", padding: "56px 64px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 28 }}>
+          <Brand size="sm" />
+        </div>
+        <div style={{ fontSize: 68, marginBottom: 20 }}>
+          <HookText hook={ptype.hook} accent={ptype.hookAccent} dark={false} />
+        </div>
+        <div style={{ fontSize: 16, color: "#555", lineHeight: 1.5, marginBottom: 28 }}>
+          {ptype.subheadline.replace(/\n/g, " ")}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+          {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark={false} />)}
+        </div>
+        <div style={{ background: "#14532d", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>Solicita información *AHORA*:</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#25d366" }}>{RMKT_PHONE_DISPLAY}</div>
+          </div>
+        </div>
+        <div style={{ marginTop: "auto", paddingTop: 16, fontSize: 11, color: "#999", textAlign: "center", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Diseño Web · Redes Sociales · Apps
+        </div>
+      </div>
+    );
+  }
+
+  // Story
+  return (
+    <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "#ffffff" }}>
+      <div style={{ height: 640, position: "relative", overflow: "hidden", flexShrink: 0 }}>
+        {photoSrc
+          ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <div style={{ width: "100%", height: "100%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ textAlign: "center", color: "#86efac", fontSize: 16 }}>📷<br/>Foto del negocio</div>
+            </div>
+        }
+        <div style={{ position: "absolute", top: 52, left: 56 }}><Brand size="sm" /></div>
+      </div>
+      <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ fontSize: hookSize }}>
+          <HookText hook={ptype.hook} accent={ptype.hookAccent} dark={false} />
+        </div>
+        <div style={{ fontSize: 17, color: "#555", lineHeight: 1.5 }}>
+          {ptype.subheadline.replace(/\n/g, " ")}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {ptype.bullets.map((b, i) => <BulletItem key={i} {...b} dark={false} />)}
+        </div>
+        <div style={{ background: "#14532d", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>Solicita información <strong style={{ color: "#25d366" }}>*AHORA*:</strong></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#25d366" }}>{RMKT_PHONE_DISPLAY}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: "#aaa", textAlign: "center", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          Diseño Web · Redes Sociales · Apps
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────────────────
+
+export function ProspectingTab({ prospect, proposals, format }) {
+  const fmt = format || FORMATS[0];
+  const [templateId, setTemplateId] = useState("flyer-oscuro");
+  const [photoSrc, setPhotoSrc] = useState(null);
+  const photoInputRef = useRef(null);
+
+  const slugName = (prospect?.name || "prospect").toLowerCase().replace(/\s+/g, "-");
+  const { exportRef, downloading, message, download } = useAssetExport({
+    filename: `rmkt-prospecting-${templateId}-${slugName}-${fmt.id}`
+  });
+
+  const typeKey = detectProjectType(prospect?.industry || "", prospect?.notes || "");
+  const ptype = PROJECT_TYPES[typeKey] || PROJECT_TYPES.otro;
+
+  function handlePhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoSrc(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  const previewScale = Math.min(600 / fmt.w, 400 / fmt.h);
+  const previewW = Math.round(fmt.w * previewScale);
+  const previewH = Math.round(fmt.h * previewScale);
+
   function renderTemplate(id) {
-    return <ProspectingTemplate id={id} prospect={prospect} format={format} pricingSnapshot={pricingSnapshot} />;
+    if (id === "flyer-oscuro") return <FlyerOscuro ptype={ptype} photoSrc={photoSrc} format={fmt} />;
+    if (id === "flyer-claro")  return <FlyerClaro  ptype={ptype} photoSrc={photoSrc} format={fmt} />;
+    return null;
   }
 
   return (
-    <div style={{ flex: 1, height: "100%", display: "grid", gridTemplateColumns: "220px 1fr", overflow: "hidden" }}>
+    <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       {/* Sidebar */}
-      <div style={{ borderRight: `1px solid ${theme.border}`, padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-        <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6, padding: "0 4px" }}>Plantillas</div>
-        {TEMPLATES.map(item => (
+      <div style={{ width: 220, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.07)", overflowY: "auto", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Industry badge */}
+        <div style={{ padding: "8px 12px", background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.15)", borderRadius: 8, marginBottom: 8 }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.08em" }}>Industria detectada</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: R.accent }}>{ptype.label}</div>
+        </div>
+
+        {/* Photo upload */}
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, padding: "4px 4px 2px" }}>Foto del negocio</div>
+        <div
+          onClick={() => photoInputRef.current?.click()}
+          style={{ padding: "10px 12px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.15)", cursor: "pointer", textAlign: "center", background: "rgba(255,255,255,0.02)" }}
+        >
+          {photoSrc
+            ? <img src={photoSrc} alt="" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 6 }} />
+            : <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", padding: "8px 0" }}>+ Subir foto</div>
+          }
+        </div>
+        {photoSrc && (
+          <button onClick={() => setPhotoSrc(null)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 8px", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer" }}>
+            Quitar foto
+          </button>
+        )}
+        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhoto} />
+
+        {/* Templates */}
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, padding: "10px 4px 2px" }}>Plantillas</div>
+        {TEMPLATES.map(t => (
           <div
-            key={item.id}
-            onClick={() => setTemplateId(item.id)}
-            style={{ padding: "10px 13px", borderRadius: 9, cursor: "pointer", background: templateId === item.id ? theme.accentBg : "transparent", border: `1px solid ${templateId === item.id ? theme.accentBorder : "transparent"}` }}
+            key={t.id}
+            onClick={() => setTemplateId(t.id)}
+            style={{ padding: "10px 13px", borderRadius: 9, cursor: "pointer", background: templateId === t.id ? "rgba(0,255,136,0.08)" : "transparent", border: `1px solid ${templateId === t.id ? "rgba(0,255,136,0.25)" : "transparent"}` }}
           >
-            <div style={{ fontSize: 12, fontWeight: templateId === item.id ? 700 : 500, color: templateId === item.id ? theme.accent : theme.text, marginBottom: 2 }}>{item.label}</div>
-            <div style={{ fontSize: 10, color: theme.muted, lineHeight: 1.4 }}>{item.desc}</div>
+            <div style={{ fontSize: 12, fontWeight: templateId === t.id ? 700 : 500, color: templateId === t.id ? R.accent : "rgba(255,255,255,0.7)", marginBottom: 2 }}>{t.label}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{t.desc}</div>
           </div>
         ))}
       </div>
 
-      {/* Preview + footer */}
-      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Preview */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ flex: 1, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#060606", padding: 28 }}>
-          <div style={{ position: "relative" }}>
-            <div style={{ width: previewW, height: previewH, overflow: "hidden", borderRadius: 10, boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)" }}>
-              <div style={{ width: format?.w, height: format?.h, transform: `scale(${previewScale})`, transformOrigin: "top left" }}>
-                {renderTemplate(templateId)}
-              </div>
-            </div>
-            <div style={{ position: "absolute", bottom: -28, left: 0, right: 0, textAlign: "center", fontSize: 10, color: theme.muted }}>
-              Vista previa · exporta en {format?.w}×{format?.h} px
+          <div style={{ width: previewW, height: previewH, overflow: "hidden", borderRadius: 10, boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)" }}>
+            <div style={{ width: fmt.w, height: fmt.h, transform: `scale(${previewScale})`, transformOrigin: "top left" }}>
+              {renderTemplate(templateId)}
             </div>
           </div>
         </div>
-        <div style={{ minHeight: 66, borderTop: `1px solid ${theme.border}`, display: "flex", alignItems: "center", padding: "0 24px", gap: 12, background: theme.s1, flexShrink: 0 }}>
+
+        <div style={{ minHeight: 66, borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", padding: "0 24px", gap: 12, background: "#0a0a0f", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: theme.text }}>{currentTemplate?.label} · {format?.label}</div>
-            <div style={{ fontSize: 11, color: theme.muted }}>{downloading ? "Generando imagen..." : `${format?.w}×${format?.h} px`}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
+              {TEMPLATES.find(t => t.id === templateId)?.label} · {fmt.label}
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+              {downloading ? (message || "Generando...") : `${fmt.w}×${fmt.h} px · ${ptype.label}`}
+            </div>
           </div>
-          {message && <span style={{ fontSize: 12, color: theme.accent, fontWeight: 600 }}>{message}</span>}
-          <Button variant="ghost" size="md" onClick={() => setPreviewOpen(true)}>Ver en grande</Button>
-          <Button variant="secondary" size="md" onClick={() => download("png", format?.w, format?.h)} disabled={downloading}>Descargar PNG</Button>
-          <Button variant="primary" size="md" onClick={() => download("jpg", format?.w, format?.h)} disabled={downloading}>Descargar JPG</Button>
+          <Button variant="secondary" size="md" onClick={() => download("png", fmt.w, fmt.h)} disabled={downloading}>
+            PNG
+          </Button>
+          <Button variant="primary" size="md" onClick={() => download("jpg", fmt.w, fmt.h)} disabled={downloading}>
+            JPG
+          </Button>
         </div>
       </div>
 
       {/* Off-screen export canvas */}
-      <div style={{ position: "fixed", left: -4000, top: 0, width: format?.w, height: format?.h, pointerEvents: "none" }}>
-        <div ref={exportRef} style={{ width: format?.w, height: format?.h }}>
+      <div style={{ position: "fixed", left: -9999, top: 0, width: fmt.w, height: fmt.h, pointerEvents: "none" }}>
+        <div ref={exportRef} style={{ width: fmt.w, height: fmt.h }}>
           {renderTemplate(templateId)}
         </div>
       </div>
-
-      {/* Preview modal */}
-      {previewOpen && (
-        <div onClick={() => setPreviewOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: "relative" }}>
-            {(() => {
-              const ms = Math.min((window.innerWidth * 0.82) / (format?.w || 1200), (window.innerHeight * 0.80) / (format?.h || 630));
-              return (
-                <>
-                  <div style={{ width: (format?.w || 1200) * ms, height: (format?.h || 630) * ms, overflow: "hidden", borderRadius: 12, boxShadow: "0 32px 80px rgba(0,0,0,0.9)" }}>
-                    <div style={{ width: format?.w, height: format?.h, transform: `scale(${ms})`, transformOrigin: "top left" }}>
-                      {renderTemplate(templateId)}
-                    </div>
-                  </div>
-                  <button onClick={() => setPreviewOpen(false)} style={{ position: "absolute", top: -14, right: -14, width: 32, height: 32, borderRadius: "50%", background: theme.s3, border: `1px solid ${theme.border}`, color: theme.muted, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
