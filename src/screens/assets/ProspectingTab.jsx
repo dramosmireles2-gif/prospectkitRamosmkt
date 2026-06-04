@@ -8,11 +8,9 @@ import { useAssetExport } from "./useAssetExport";
 import { R, BASE, Brand, Glow } from "./shared";
 
 const TEMPLATES = [
-  { id: "opportunity-flyer", label: "Opportunity Flyer",  desc: "Oportunidades de crecimiento detectadas" },
-  { id: "pain-point-flyer",  label: "Pain Point Flyer",   desc: "Problemas encontrados en el negocio" },
-  { id: "competitor-flyer",  label: "Competitor Flyer",   desc: "Comparativa vs competidores del sector" },
-  { id: "growth-flyer",      label: "Growth Flyer",       desc: "3 oportunidades de crecimiento rápido" },
-  { id: "roi-flyer",         label: "ROI Flyer",          desc: "Inversión vs beneficio potencial" },
+  { id: "diagnostico-digital", label: "Diagnóstico Digital", desc: "Score, top 3 servicios y problemas críticos detectados" },
+  { id: "crecimiento-rapido",  label: "Quick Wins",          desc: "3 oportunidades de crecimiento rápido con impacto" },
+  { id: "propuesta-inicial",   label: "Propuesta Inicial",   desc: "Servicios recomendados, precios y CTA de cierre" },
 ];
 
 function ProspectingTemplate({ id, prospect, format, pricingSnapshot }) {
@@ -22,180 +20,123 @@ function ProspectingTemplate({ id, prospect, format, pricingSnapshot }) {
   const score = prospect.opportunityScore || 0;
   const scoreColor = score >= 85 ? R.accent : score >= 70 ? R.yellow : R.blue;
   const isStory = format?.id === "story";
+  const isLandscape = format?.id === "landscape";
 
-  if (id === "opportunity-flyer") {
+  if (id === "diagnostico-digital") {
+    const missingFeatures = analysis?.missingFeatures || [];
+    const critical = missingFeatures.filter(f => f.critical).slice(0, isStory ? 2 : 3);
     const topServices = displayServices.slice(0, isStory ? 2 : 3);
     return (
       <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.accent} top={-80} right={-80} size={360} />
+        <Glow color={R.red} top={-60} right={-60} size={300} />
+        <Glow color={R.accent} bottom={-60} left={-60} size={260} />
         {/* Header */}
-        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
+        <div style={{ padding: isStory ? "48px 56px 24px" : "32px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`, color: scoreColor, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
-              Score {score}/100
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ padding: "4px 12px", borderRadius: 20, background: `${scoreColor}18`, border: `1px solid ${scoreColor}44`, color: scoreColor, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Score {score}/100
+              </div>
             </div>
-            <div style={{ fontSize: isStory ? 44 : 36, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-              Detectamos oportunidades en
+            <div style={{ fontSize: isStory ? 40 : 30, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+              Diagnóstico digital de
             </div>
-            <div style={{ fontSize: isStory ? 44 : 36, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+            <div style={{ fontSize: isStory ? 40 : 30, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
               {prospect.name}
             </div>
           </div>
           <Brand size="md" />
         </div>
-        {/* Body: top opportunities */}
-        <div style={{ flex: 1, padding: isStory ? "0 56px" : "0 56px", display: "flex", flexDirection: isStory ? "column" : "row", gap: 16 }}>
-          {topServices.map((s, i) => {
+        {/* Body */}
+        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 18 }}>
+          {/* Problems column */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: R.red, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Problemas críticos</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {critical.length > 0 ? critical.map(f => (
+                <div key={f.name} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: "rgba(255,68,85,0.07)", border: "1px solid rgba(255,68,85,0.2)", borderRadius: 10 }}>
+                  <span style={{ color: R.red, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>×</span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>{f.name}</span>
+                </div>
+              )) : (
+                <div style={{ fontSize: 13, color: R.muted, padding: "10px 14px" }}>Sin problemas críticos detectados.</div>
+              )}
+            </div>
+          </div>
+          {/* Opportunities column */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Top servicios recomendados</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {topServices.map(s => (
+                <div key={s.service} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "rgba(0,255,136,0.05)", border: "1px solid rgba(0,255,136,0.15)", borderRadius: 10 }}>
+                  <span style={{ fontSize: 20 }}>{s.icon || "🚀"}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: R.text }}>{s.service}</div>
+                    <div style={{ fontSize: 12, color: R.accent, fontWeight: 700 }}>{formatServicePricing(s)}</div>
+                  </div>
+                  <span style={{ color: R.accent, fontSize: 16 }}>✓</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
+          <div style={{ fontSize: 13, color: R.muted }}>Potencial primer año: <strong style={{ color: R.text }}>{formatCurrency(displayPricingSummary.firstYear?.min || 0)}</strong></div>
+          <div style={{ padding: "10px 22px", borderRadius: 8, background: R.accent, color: "#000", fontWeight: 800, fontSize: 13 }}>
+            Ver informe completo
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (id === "crecimiento-rapido") {
+    const wins = (analysis?.opportunities?.length ? analysis.opportunities.slice(0, isStory ? 2 : 3) : displayServices.slice(0, isStory ? 2 : 3));
+    const isOppObj = wins.length > 0 && wins[0] && typeof wins[0] === "object" && !wins[0].service;
+    return (
+      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
+        <Glow color={R.accent} top={-60} left={-60} size={340} />
+        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "rgba(0,255,136,0.1)", border: "1px solid rgba(0,255,136,0.25)", color: R.accent, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
+              Quick Wins detectados
+            </div>
+            <div style={{ fontSize: isStory ? 44 : 34, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+              {isStory ? 2 : 3} oportunidades para <span style={{ color: R.accent }}>{prospect.name}</span>
+            </div>
+          </div>
+          <Brand size="md" />
+        </div>
+        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 16 }}>
+          {wins.map((item, i) => {
+            const isService = !isOppObj;
+            const name = isService ? item.service : (item.title || item.name || "Oportunidad");
+            const icon = isService ? (item.icon || "🚀") : "🚀";
+            const price = isService ? formatServicePricing(item) : null;
             const barW = Math.max(40, 100 - i * 20);
             return (
-              <div key={s.service} style={{ flex: 1, padding: "20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 22 }}>{s.icon || "🚀"}</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: R.text, flex: 1 }}>{s.service}</span>
+              <div key={name} style={{ flex: 1, padding: "20px", background: "rgba(0,255,136,0.04)", border: "1px solid rgba(0,255,136,0.14)", borderRadius: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 28, lineHeight: 1 }}>{icon}</span>
+                  <div style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(0,255,136,0.15)", color: R.accent, fontSize: 10, fontWeight: 700 }}>Alta prioridad</div>
                 </div>
-                <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2 }}>
-                  <div style={{ height: "100%", width: `${barW}%`, borderRadius: 2, background: `linear-gradient(90deg, ${R.accent}, rgba(0,255,136,0.4))` }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: R.text, marginBottom: 6 }}>{name}</div>
+                  {price && <div style={{ fontSize: 20, fontWeight: 900, color: R.accent }}>{price}</div>}
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: R.accent }}>{formatServicePricing(s)}</div>
+                {/* Impact bar */}
+                <div>
+                  <div style={{ fontSize: 10, color: R.muted, marginBottom: 4 }}>Impacto estimado</div>
+                  <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${barW}%`, borderRadius: 2, background: `linear-gradient(90deg, ${R.accent}, rgba(0,255,136,0.4))` }} />
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
-        {/* Footer */}
-        <div style={{ padding: isStory ? "24px 56px 40px" : "16px 56px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
-          <div>
-            <div style={{ fontSize: 11, color: R.muted, marginBottom: 4 }}>Potencial de ingreso estimado</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: R.text }}>
-              {formatCurrency(displayPricingSummary.firstYear?.min || 0)}<span style={{ fontSize: 12, color: R.muted, fontWeight: 400 }}>/año</span>
-            </div>
-          </div>
-          <div style={{ padding: "10px 24px", borderRadius: 8, background: R.accent, color: "#000", fontWeight: 800, fontSize: 13 }}>
-            Solicita análisis completo
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "pain-point-flyer") {
-    const missingFeatures = analysis?.missingFeatures || [];
-    const critical = missingFeatures.filter(f => f.critical);
-    const nonCritical = missingFeatures.filter(f => !f.critical);
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.red} top={-60} right={-60} size={320} />
-        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "rgba(255,68,85,0.12)", border: "1px solid rgba(255,68,85,0.3)", color: R.red, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
-              Auditoría digital
-            </div>
-            <div style={{ fontSize: isStory ? 40 : 32, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
-              Encontramos <span style={{ color: R.red }}>{missingFeatures.length} problemas</span> en {prospect.name}
-            </div>
-          </div>
-        </div>
-        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isStory ? "column" : "row", gap: 20 }}>
-          {critical.length > 0 && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: R.red, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Críticos</div>
-              {critical.slice(0, isStory ? 3 : 4).map(f => (
-                <div key={f.name} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
-                  <span style={{ color: R.red, fontWeight: 900, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }}>×</span>
-                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{f.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {nonCritical.length > 0 && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: R.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Mejorables</div>
-              {nonCritical.slice(0, isStory ? 3 : 4).map(f => (
-                <div key={f.name} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
-                  <span style={{ color: R.dim, fontWeight: 900, fontSize: 14, flexShrink: 0, lineHeight: 1.4 }}>○</span>
-                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>{f.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{ padding: isStory ? "24px 56px 40px" : "16px 56px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: R.text }}>¿Quieres solucionarlos?</div>
-          <Brand />
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "competitor-flyer") {
-    const missingFeatures = analysis?.missingFeatures || [];
-    const rows = [
-      { label: "Sitio web",         has: !missingFeatures.find(f => f.name?.toLowerCase().includes("web")) },
-      { label: "Redes sociales",    has: !missingFeatures.find(f => f.name?.toLowerCase().includes("red") || f.name?.toLowerCase().includes("social")) },
-      { label: "Publicidad online", has: !missingFeatures.find(f => f.name?.toLowerCase().includes("pub") || f.name?.toLowerCase().includes("ads")) },
-      { label: "Reseñas / Google",  has: !missingFeatures.find(f => f.name?.toLowerCase().includes("rese") || f.name?.toLowerCase().includes("google")) },
-      { label: "App / E-commerce",  has: !missingFeatures.find(f => f.name?.toLowerCase().includes("app") || f.name?.toLowerCase().includes("tienda")) },
-    ];
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: isStory ? 38 : 30, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
-              {prospect.name} vs competidores del sector
-            </div>
-            <div style={{ fontSize: 14, color: R.muted, marginTop: 6 }}>{prospect.industry}</div>
-          </div>
-        </div>
-        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {/* Header row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 160px", gap: 8, marginBottom: 8 }}>
-            <div />
-            <div style={{ textAlign: "center", fontSize: 11, color: R.text, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{prospect.name.split(" ")[0]}</div>
-            <div style={{ textAlign: "center", fontSize: 11, color: R.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>Competencia</div>
-          </div>
-          {rows.slice(0, isStory ? 4 : 5).map(row => (
-            <div key={row.label} style={{ display: "grid", gridTemplateColumns: "1fr 120px 160px", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{row.label}</span>
-              <div style={{ textAlign: "center", fontSize: 18 }}>{row.has ? <span style={{ color: R.accent }}>✓</span> : <span style={{ color: R.red }}>✗</span>}</div>
-              <div style={{ textAlign: "center", fontSize: 18 }}><span style={{ color: R.accent }}>✓</span></div>
-            </div>
-          ))}
-        </div>
-        <div style={{ padding: isStory ? "24px 56px 40px" : "16px 56px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: R.text }}>Tu competencia ya lo tiene. ¿Y tú?</div>
-          <Brand />
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "growth-flyer") {
-    const wins = displayServices.slice(0, 3);
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <Glow color={R.accent} top={-60} left={-60} size={340} />
-        <div style={{ padding: isStory ? "52px 56px 28px" : "36px 56px 20px", flexShrink: 0 }}>
-          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "rgba(0,255,136,0.1)", border: "1px solid rgba(0,255,136,0.25)", color: R.accent, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
-            Quick Wins detectados
-          </div>
-          <div style={{ fontSize: isStory ? 44 : 36, fontWeight: 900, color: R.text, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-            3 Quick Wins para <span style={{ color: R.accent }}>{prospect.name}</span>
-          </div>
-        </div>
-        <div style={{ flex: 1, padding: "0 56px", display: "flex", flexDirection: isStory ? "column" : "row", gap: 16 }}>
-          {wins.map((s, i) => (
-            <div key={s.service} style={{ flex: 1, padding: "20px", background: "rgba(0,255,136,0.04)", border: "1px solid rgba(0,255,136,0.14)", borderRadius: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <span style={{ fontSize: 28, lineHeight: 1 }}>{s.icon || "🚀"}</span>
-                <div style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(0,255,136,0.15)", color: R.accent, fontSize: 10, fontWeight: 700 }}>Alta prioridad</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: R.text, marginBottom: 6 }}>{s.service}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: R.accent }}>{formatServicePricing(s)}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ padding: isStory ? "24px 56px 40px" : "16px 56px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
+        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 16 }}>
           <Brand />
           <div style={{ fontSize: 14, color: R.muted }}>Podemos empezar esta semana</div>
         </div>
@@ -203,40 +144,41 @@ function ProspectingTemplate({ id, prospect, format, pricingSnapshot }) {
     );
   }
 
-  if (id === "roi-flyer") {
-    const firstService = displayServices[0];
-    const monthlyInvestment = displayPricingSummary.monthly?.min || 0;
-    const oneTimeInvestment = displayPricingSummary.oneTime?.min || 0;
-    const clientGain = firstService?.clientMonthlyGain || monthlyInvestment * 3.5;
-    const roiPercent = monthlyInvestment > 0 ? Math.round(((clientGain - monthlyInvestment) / monthlyInvestment) * 100) : 0;
-    const paybackMonths = clientGain > 0 ? Math.max(1, Math.round(oneTimeInvestment / clientGain)) : 3;
+  if (id === "propuesta-inicial") {
+    const items = displayServices.slice(0, isStory ? 3 : 5);
+    const totalFirstYear = displayPricingSummary.firstYear?.min || 0;
     return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <Glow color={R.accent} top="50%" left="50%" size={400} />
-        <div style={{ position: "absolute", top: isStory ? 52 : 28, left: 56, right: 56, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: isStory ? 36 : 28, fontWeight: 900, color: R.text }}>Análisis de ROI</div>
-          <Brand />
+      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
+        <Glow color={R.accent} top={-80} right={-80} size={380} />
+        {/* Header */}
+        <div style={{ padding: isStory ? "48px 56px 24px" : "32px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div>
+            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Propuesta inicial para</div>
+            <div style={{ fontSize: isStory ? 38 : 28, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em" }}>{prospect.name}</div>
+          </div>
+          <Brand size="md" />
         </div>
-        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: isStory ? "column" : "row", gap: 28, alignItems: "center", padding: "0 56px", width: "100%" }}>
-          <div style={{ flex: 1, padding: "24px", background: "rgba(255,68,85,0.07)", border: "1px solid rgba(255,68,85,0.22)", borderRadius: 14 }}>
-            <div style={{ fontSize: 11, color: "#ff6677", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Inversión mensual</div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: R.text, letterSpacing: "-0.03em" }}>{formatCurrency(monthlyInvestment)}</div>
-            <div style={{ fontSize: 12, color: R.muted, marginTop: 4 }}>+ {formatCurrency(oneTimeInvestment)} setup</div>
-          </div>
-          <div style={{ fontSize: 28, color: R.dim, fontWeight: 700 }}>→</div>
-          <div style={{ flex: 1, padding: "24px", background: "rgba(0,255,136,0.07)", border: "1px solid rgba(0,255,136,0.22)", borderRadius: 14 }}>
-            <div style={{ fontSize: 11, color: R.accent, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Ganancia estimada</div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: R.accent, letterSpacing: "-0.03em" }}>{formatCurrency(clientGain)}</div>
-            <div style={{ fontSize: 12, color: R.muted, marginTop: 4 }}>por mes estimado</div>
-          </div>
-          <div style={{ flex: isStory ? undefined : "0 0 auto", textAlign: "center", padding: "24px 32px", background: "rgba(255,255,255,0.03)", borderRadius: 14, border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>ROI estimado</div>
-            <div style={{ fontSize: isStory ? 72 : 60, fontWeight: 900, color: R.accent, letterSpacing: "-0.04em", lineHeight: 1 }}>{roiPercent}%</div>
-          </div>
+        {/* Services list */}
+        <div style={{ flex: 1, padding: isStory ? "24px 56px" : "18px 56px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {items.map(s => (
+            <div key={s.service} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
+              <span style={{ fontSize: 20 }}>{s.icon || "🔧"}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: R.text }}>{s.service}</div>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: R.accent }}>{formatServicePricing(s)}</div>
+            </div>
+          ))}
         </div>
-        <div style={{ position: "absolute", bottom: isStory ? 40 : 24, left: 56, right: 56, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 14, color: R.muted }}>Payback estimado: <strong style={{ color: R.text }}>{paybackMonths} {paybackMonths === 1 ? "mes" : "meses"}</strong></div>
-          <div style={{ fontSize: 13, color: R.muted }}>Para {prospect.name}</div>
+        {/* Total + CTA */}
+        <div style={{ padding: isStory ? "20px 56px 36px" : "14px 56px 24px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Total estimado primer año</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: R.text, letterSpacing: "-0.03em" }}>{formatCurrency(totalFirstYear)}</div>
+          </div>
+          <div style={{ padding: "12px 28px", borderRadius: 10, background: R.accent, color: "#000", fontWeight: 800, fontSize: 14 }}>
+            Agenda una llamada →
+          </div>
         </div>
       </div>
     );
@@ -246,7 +188,7 @@ function ProspectingTemplate({ id, prospect, format, pricingSnapshot }) {
 }
 
 export function ProspectingTab({ prospect, proposals = [], format }) {
-  const [templateId, setTemplateId] = useState("opportunity-flyer");
+  const [templateId, setTemplateId] = useState("diagnostico-digital");
   const [previewOpen, setPreviewOpen] = useState(false);
   const activeProposal = getActiveProposal(proposals);
   const pricingSnapshot = prospect ? getProspectCommercialSnapshot(prospect, activeProposal) : null;

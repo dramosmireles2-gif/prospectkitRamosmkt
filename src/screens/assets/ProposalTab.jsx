@@ -8,11 +8,9 @@ import { useAssetExport } from "./useAssetExport";
 import { R, BASE, Brand } from "./shared";
 
 const TEMPLATES = [
-  { id: "propuesta-visual", label: "Propuesta Visual",         desc: "Resumen visual de la propuesta" },
-  { id: "roadmap",          label: "Roadmap",                  desc: "Timeline de implementación 4 fases" },
-  { id: "timeline",         label: "Timeline",                 desc: "Cronograma semanal detallado" },
-  { id: "alcance",          label: "Alcance del Servicio",     desc: "Scope of work por servicio" },
-  { id: "comparativa",      label: "Actual vs Futuro",         desc: "Transformación digital visual" },
+  { id: "propuesta-completa",  label: "Propuesta Completa",   desc: "Servicios, precios negociados y totales del año" },
+  { id: "roadmap-visual",      label: "Roadmap Visual",        desc: "4 fases de implementación con hitos clave" },
+  { id: "comparativa-digital", label: "Actual vs RamosMKT",   desc: "Transformación digital: situación actual vs futuro" },
 ];
 
 function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
@@ -20,8 +18,12 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
   const isLandscape = format?.id === "landscape";
   const services = pricingSnapshot?.services || [];
   const summary = pricingSnapshot?.pricingSummary || { oneTime: { min: 0 }, monthly: { min: 0 }, firstYear: { min: 0 } };
+  const hasProposal = pricingSnapshot?.source === "proposal";
+  const sourceBadge = hasProposal
+    ? { label: "Con propuesta activa", bg: "rgba(0,255,136,0.12)", border: "rgba(0,255,136,0.3)", color: R.accent }
+    : { label: "Basado en análisis",   bg: "rgba(120,120,120,0.12)", border: "rgba(120,120,120,0.25)", color: R.muted };
 
-  if (id === "propuesta-visual") {
+  if (id === "propuesta-completa") {
     return (
       <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: isStory ? "36px 48px 20px" : "24px 48px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
@@ -29,14 +31,19 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
             <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Propuesta para</div>
             <div style={{ fontSize: isStory ? 36 : 26, fontWeight: 900, color: R.text, letterSpacing: "-0.02em" }}>{prospect?.name || "Tu negocio"}</div>
           </div>
-          <Brand />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Brand />
+            <div style={{ padding: "3px 10px", borderRadius: 20, background: sourceBadge.bg, border: `1px solid ${sourceBadge.border}`, color: sourceBadge.color, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
+              {sourceBadge.label}
+            </div>
+          </div>
         </div>
-        <div style={{ flex: 1, padding: isStory ? "24px 48px" : "20px 48px", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, padding: isStory ? "20px 48px" : "16px 48px", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
             {services.slice(0, isStory ? 4 : 6).map(s => {
-              const type = s.billingType || "monthly";
-              const typeLabel = type === "one_time" ? "Pago único" : type === "setup_monthly" ? "Setup + mensual" : "Mensual";
-              const typeColor = type === "one_time" ? R.blue : type === "setup_monthly" ? R.yellow : R.accent;
+              const billingType = s.billingType || s.type || "mensual";
+              const typeLabel = billingType === "unico" ? "Pago único" : billingType === "anual" ? "Anual" : billingType === "setup+mensual" ? "Setup + mensual" : "Mensual";
+              const typeColor = billingType === "unico" ? R.blue : billingType === "anual" ? R.purple : billingType === "setup+mensual" ? R.yellow : R.accent;
               return (
                 <div key={s.service} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
                   <span style={{ fontSize: 20 }}>{s.icon}</span>
@@ -68,13 +75,14 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
     );
   }
 
-  if (id === "roadmap") {
+  if (id === "roadmap-visual") {
     const phases = [
-      { week: "Semana 1-2", title: "Setup y configuración", color: R.blue, bullets: ["Onboarding y accesos", "Configuración de cuentas", "Revisión de materiales"] },
-      { week: "Semana 3-4", title: "Lanzamiento", color: R.accent, bullets: ["Publicación inicial", "Activación de campañas", "Pruebas de funcionalidad"] },
-      { week: "Mes 2", title: "Optimización", color: R.yellow, bullets: ["Análisis de primeros datos", "Ajuste de estrategia", "Mejora de conversiones"] },
-      { week: "Mes 3+", title: "Crecimiento", color: R.purple, bullets: ["Escalado de resultados", "Nuevas oportunidades", "Reporte de impacto"] }
+      { week: "Semana 1-2", title: "Setup",        icon: "⚙️", color: R.blue,   bullets: ["Onboarding y accesos", "Configuración inicial"] },
+      { week: "Semana 3-4", title: "Lanzamiento",  icon: "🚀", color: R.accent, bullets: ["Publicación y activación", "Pruebas de funcionalidad"] },
+      { week: "Mes 2-3",    title: "Optimización", icon: "📈", color: R.yellow, bullets: ["Análisis de primeros datos", "Ajuste de estrategia"] },
+      { week: "Mes 4+",     title: "Escala",        icon: "⚡", color: R.purple, bullets: ["Escalado de resultados", "Nuevas oportunidades"] }
     ];
+    const visiblePhases = isStory ? phases.slice(0, 3) : phases;
     return (
       <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: isStory ? "40px 48px 20px" : "24px 48px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
@@ -82,21 +90,28 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
             <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Roadmap de implementación</div>
             <div style={{ fontSize: isStory ? 36 : 26, fontWeight: 900, color: R.text, letterSpacing: "-0.02em" }}>{prospect?.name || "Tu negocio"}</div>
           </div>
-          <Brand />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Brand />
+            <div style={{ padding: "3px 10px", borderRadius: 20, background: sourceBadge.bg, border: `1px solid ${sourceBadge.border}`, color: sourceBadge.color, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
+              {sourceBadge.label}
+            </div>
+          </div>
         </div>
         <div style={{ flex: 1, padding: isStory ? "28px 48px" : "20px 48px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 16, alignItems: "stretch" }}>
-          {phases.map(phase => (
-            <div key={phase.title} style={{ flex: 1, padding: "18px", background: "rgba(255,255,255,0.03)", border: `1px solid ${phase.color}22`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: phase.color, flexShrink: 0 }} />
-                <div style={{ fontSize: 10, color: R.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{phase.week}</div>
+          {visiblePhases.map(phase => (
+            <div key={phase.title} style={{ flex: 1, padding: "18px", background: "rgba(255,255,255,0.03)", border: `1px solid ${phase.color}22`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 22 }}>{phase.icon}</span>
+                <div>
+                  <div style={{ fontSize: 10, color: phase.color, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>{phase.week}</div>
+                  <div style={{ fontSize: isLandscape ? 14 : 15, fontWeight: 800, color: R.text, lineHeight: 1.3 }}>{phase.title}</div>
+                </div>
               </div>
-              <div style={{ fontSize: isLandscape ? 14 : 15, fontWeight: 800, color: R.text, lineHeight: 1.3 }}>{phase.title}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {phase.bullets.map(b => (
-                  <div key={b} style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                  <div key={b} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <span style={{ color: phase.color, fontSize: 10, marginTop: 3, flexShrink: 0 }}>●</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.4 }}>{b}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>{b}</span>
                   </div>
                 ))}
               </div>
@@ -107,110 +122,22 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
     );
   }
 
-  if (id === "timeline") {
-    const weeks = [
-      { n: 1,   label: "Kickoff + Discovery",     color: R.blue,   bullets: ["Onboarding", "Accesos", "Brief completo"] },
-      { n: 2,   label: "Diseño + Wireframes",      color: R.purple, bullets: ["Maquetas", "Paleta final", "Revisión cliente"] },
-      { n: "3-4", label: "Desarrollo",             color: R.accent, bullets: ["Frontend", "Backend", "Integraciones"] },
-      { n: 5,   label: "QA + Revisiones",          color: R.yellow, bullets: ["Testing", "Ajustes", "Aprobación"] },
-      { n: 6,   label: "Lanzamiento",              color: R.red,    bullets: ["Deploy", "DNS", "Entrega"] },
+  if (id === "comparativa-digital") {
+    const leftRows = [
+      "Sin presencia digital profesional",
+      "Sin publicidad online activa",
+      "Sin seguimiento de métricas",
+      "Clientes perdidos a competidores",
+      "Sin automatización de clientes",
     ];
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: isStory ? "40px 48px 20px" : "24px 48px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
-          <div>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Cronograma detallado</div>
-            <div style={{ fontSize: isStory ? 36 : 26, fontWeight: 900, color: R.text, letterSpacing: "-0.02em" }}>{prospect?.name || "Tu proyecto"}</div>
-          </div>
-          <Brand />
-        </div>
-        <div style={{ flex: 1, padding: isStory ? "24px 48px" : "16px 48px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 12 }}>
-          {weeks.map(w => (
-            <div key={w.n} style={{ flex: 1, padding: "16px", background: "rgba(255,255,255,0.03)", border: `1px solid ${w.color}22`, borderRadius: 12 }}>
-              <div style={{ fontSize: 10, color: w.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Semana {w.n}</div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: R.text, lineHeight: 1.3, marginBottom: 8 }}>{w.label}</div>
-              {w.bullets.map(b => (
-                <div key={b} style={{ display: "flex", gap: 5, alignItems: "flex-start", marginBottom: 4 }}>
-                  <span style={{ color: w.color, fontSize: 9, marginTop: 3, flexShrink: 0 }}>●</span>
-                  <span style={{ fontSize: 10, color: R.muted, lineHeight: 1.4 }}>{b}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        <div style={{ padding: isStory ? "16px 48px 32px" : "12px 48px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize: 13, color: R.muted }}>Entrega garantizada en 6 semanas</div>
-          <Brand size="sm" />
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "alcance") {
-    const serviceDeliverables = {
-      "Web": ["Landing page responsive", "Formulario de contacto", "Optimización básica SEO"],
-      "SEO": ["Auditoría de palabras clave", "Optimización on-page", "Reporte mensual"],
-      "Redes Sociales": ["Calendario de contenido", "Diseño de publicaciones", "Gestión de comunidad"],
-      "Google Ads": ["Configuración de campañas", "Segmentación de audiencias", "Optimización mensual"],
-      "Email Marketing": ["Secuencia de bienvenida", "Newsletters mensuales", "Automatizaciones básicas"]
-    };
-    return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: isStory ? "36px 48px 20px" : "22px 48px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
-          <div>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Alcance del servicio</div>
-            <div style={{ fontSize: isStory ? 34 : 24, fontWeight: 900, color: R.text, letterSpacing: "-0.02em" }}>{prospect?.name || "Tu negocio"}</div>
-          </div>
-          <Brand />
-        </div>
-        <div style={{ flex: 1, padding: isStory ? "20px 48px" : "16px 48px", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "grid", gridTemplateColumns: isStory ? "1fr" : services.length >= 4 ? "repeat(2,1fr)" : "1fr 1fr", gap: 12, flex: 1 }}>
-            {services.slice(0, isStory ? 3 : 4).map(s => {
-              const key = Object.keys(serviceDeliverables).find(k => s.service?.toLowerCase().includes(k.toLowerCase())) || "Web";
-              const deliverables = serviceDeliverables[key] || ["Entrega puntual", "Reporte de avance", "Soporte incluido"];
-              return (
-                <div key={s.service} style={{ padding: "16px 18px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 22 }}>{s.icon}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: R.text }}>{s.service}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: R.accent }}>{formatServicePricing(s)}</div>
-                    </div>
-                  </div>
-                  {deliverables.map(d => (
-                    <div key={d} style={{ display: "flex", gap: 6, marginBottom: 5 }}>
-                      <span style={{ color: R.accent, fontSize: 10, marginTop: 3 }}>●</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{d}</span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: R.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Setup</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: R.text }}>{formatCurrency(summary.oneTime?.min || 0)}</div>
-            </div>
-            <div style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: R.accent, textTransform: "uppercase", letterSpacing: "0.08em" }}>Mensual</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: R.accent }}>{formatCurrency(summary.monthly?.min || 0)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (id === "comparativa") {
-    const rows = [
-      { label: "Website profesional" },
-      { label: "Redes sociales activas" },
-      { label: "Publicidad online" },
-      { label: "Atención al cliente digital" },
-      { label: "Analítica y reportes" },
-      { label: "Reservas / pedidos online" }
+    const rightRows = [
+      "Presencia digital optimizada",
+      "Campañas activas y medibles",
+      "Reportes y análisis continuos",
+      "Captación constante de clientes",
+      "Automatización y seguimiento",
     ];
+    const visibleCount = isStory ? 4 : 5;
     return (
       <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: isStory ? "40px 48px 20px" : "24px 52px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
@@ -220,25 +147,31 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
           </div>
           <Brand />
         </div>
-        <div style={{ flex: 1, padding: isStory ? "24px 48px" : "16px 52px", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 0, marginBottom: 8 }}>
-            <div />
-            <div style={{ width: isStory ? 110 : 130, textAlign: "center", fontSize: 11, color: "#ff6677", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "0 8px" }}>Actual</div>
-            <div style={{ width: isStory ? 130 : 150, textAlign: "center", fontSize: 11, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "0 8px" }}>Con RamosMKT</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-            {rows.slice(0, isStory ? 5 : 6).map(row => (
-              <div key={row.label} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{row.label}</div>
-                <div style={{ width: isStory ? 110 : 130, textAlign: "center", fontSize: 18, color: R.red }}>✗</div>
-                <div style={{ width: isStory ? 130 : 150, textAlign: "center", fontSize: 18, color: R.accent }}>✓</div>
+        <div style={{ flex: 1, padding: isStory ? "20px 48px" : "14px 52px", display: "flex", flexDirection: isLandscape ? "row" : "column", gap: 16 }}>
+          {/* Left: Actual */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontSize: 12, color: R.red, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Situación actual</div>
+            {leftRows.slice(0, visibleCount).map(row => (
+              <div key={row} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: "rgba(255,68,85,0.06)", border: "1px solid rgba(255,68,85,0.18)", borderRadius: 9 }}>
+                <span style={{ color: R.red, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>✗</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>{row}</span>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 16, padding: "14px 18px", background: "rgba(0,255,136,0.06)", border: "1px solid rgba(0,255,136,0.2)", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: R.text }}>¿Empezamos hoy?</div>
-            <div style={{ padding: "8px 20px", borderRadius: 8, background: R.accent, color: "#000", fontSize: 13, fontWeight: 800 }}>Hablemos →</div>
+          {/* Right: Con RamosMKT */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontSize: 12, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Con RamosMKT</div>
+            {rightRows.slice(0, visibleCount).map(row => (
+              <div key={row} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: "rgba(0,255,136,0.05)", border: "1px solid rgba(0,255,136,0.15)", borderRadius: 9 }}>
+                <span style={{ color: R.accent, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>✓</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>{row}</span>
+              </div>
+            ))}
           </div>
+        </div>
+        <div style={{ padding: isStory ? "16px 48px 32px" : "12px 52px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: R.muted }}>Transforma tu negocio digital</div>
+          <Brand size="sm" />
         </div>
       </div>
     );
@@ -248,7 +181,7 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
 }
 
 export function ProposalTab({ prospect, proposals = [], format }) {
-  const [templateId, setTemplateId] = useState("propuesta-visual");
+  const [templateId, setTemplateId] = useState("propuesta-completa");
   const [previewOpen, setPreviewOpen] = useState(false);
   const activeProposal = getActiveProposal(proposals);
   const pricingSnapshot = prospect ? getProspectCommercialSnapshot(prospect, activeProposal) : null;

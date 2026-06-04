@@ -106,30 +106,18 @@ export const SERVICE_CATALOG = [
     keywords: ["email", "correo", "newsletter"]
   },
   {
-    id: "hosting",
-    service: "Dominio + Hosting",
-    shortService: "Dominio + Hosting",
+    id: "infra",
+    service: "Infraestructura web",
+    shortService: "Infraestructura web",
     icon: "☁️",
-    type: "mensual",
-    price: 350,
+    type: "anual",
+    price: 4800,
+    priceMin: 1200,
     setupPrice: 0,
     clientMonthlyGain: 0,
-    desc: "Infraestructura minima para mantener el sitio publicado.",
-    billingNote: "Cobro mensual posterior al desarrollo del sitio.",
-    keywords: ["hosting", "dominio"]
-  },
-  {
-    id: "manten",
-    service: "Mantenimiento web",
-    shortService: "Mantenimiento web",
-    icon: "🔧",
-    type: "mensual",
-    price: 600,
-    setupPrice: 0,
-    clientMonthlyGain: 0,
-    desc: "Ajustes, soporte y mejoras menores del sitio.",
-    billingNote: "Servicio mensual posterior al desarrollo.",
-    keywords: ["mantenimiento", "manten", "soporte web"]
+    desc: "Dominio + hosting + mantenimiento web anual.",
+    billingNote: "Cobro anual. Incluye dominio, hosting y mantenimiento básico.",
+    keywords: ["hosting", "dominio", "mantenimiento", "manten", "infra", "infraestructura"]
   }
 ];
 
@@ -163,6 +151,7 @@ export function getRecurringPrice(service) {
   if (!service) return 0;
   const catalog = resolveCatalogService(service);
   if (service.monthlyPrice !== undefined) return service.monthlyPrice || 0;
+  if (service.type === "anual" || service.billingType === "anual" || catalog?.type === "anual") return 0;
   if (service.type === "mensual" || service.type === "setup+mensual" || service.billingType === "mensual" || service.billingType === "setup+mensual") {
     return service.negotiatedPrice ?? service.price ?? service.revenue ?? 0;
   }
@@ -180,6 +169,12 @@ export function getOneTimePrice(service) {
     return service.negotiatedPrice ?? service.price ?? service.revenue ?? 0;
   }
   if (catalog?.type === "unico") {
+    return service.negotiatedPrice ?? service.price ?? service.revenue ?? catalog.price ?? 0;
+  }
+  if (service.type === "anual" || service.billingType === "anual") {
+    return service.negotiatedPrice ?? service.price ?? service.revenue ?? 0;
+  }
+  if (catalog?.type === "anual") {
     return service.negotiatedPrice ?? service.price ?? service.revenue ?? catalog.price ?? 0;
   }
   return 0;
@@ -219,6 +214,11 @@ export function formatServicePricing(service) {
 
   if (billingType === "unico") {
     return `Pago unico ${formatCurrency(oneTime)}`;
+  }
+
+  if (billingType === "anual") {
+    const price = oneTime;
+    return `Pago anual ${formatCurrency(price)}`;
   }
 
   if (billingType === "setup+mensual") {
