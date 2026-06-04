@@ -57,11 +57,11 @@ export function LTVScreen({ prospect, proposals, onBack }) {
 
   const activeProposal = getActiveProposal(proposals);
   const proposalRecurringServices = activeProposal
-    ? (activeProposal.services || []).filter((service) => service.type === "mensual" || service.type === "setup+mensual")
+    ? (activeProposal.services || []).filter((service) => getRecurringPrice(service) > 0 || (service.negotiatedPrice || service.price || 0) > 0)
     : [];
   const analysisRecurringServices = (prospect.analysis?.recommendedServices || []).filter((service) => getRecurringPrice(service) > 0);
 
-  const proposalMonthly = proposalRecurringServices.reduce((sum, service) => sum + (service.negotiatedPrice || 0), 0);
+  const proposalMonthly = proposalRecurringServices.reduce((sum, service) => sum + (service.negotiatedPrice || service.price || getRecurringPrice(service) || 0), 0);
   const analysisMonthly = analysisRecurringServices.reduce((sum, service) => sum + getRecurringPrice(service), 0);
   const monthly = proposalMonthly > 0 ? proposalMonthly : analysisMonthly;
   const recurringServices = proposalRecurringServices.length > 0 ? proposalRecurringServices : analysisRecurringServices;

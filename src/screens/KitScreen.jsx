@@ -27,7 +27,7 @@ function SpinnerIcon() {
   );
 }
 
-export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAssets }) {
+export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAssets, onMarkContacted }) {
   const isMobile = useIsMobile();
   const [phase, setPhase] = useState(prospect?.kit ? "done" : "idle");
   const [step, setStep] = useState(0);
@@ -264,6 +264,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                               href={getWhatsAppUrl(currentText)}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={() => onMarkContacted?.()}
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
