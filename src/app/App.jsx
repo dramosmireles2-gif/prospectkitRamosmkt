@@ -264,6 +264,21 @@ function AppContent() {
     }
   }
 
+  async function handleUpdateProspect(fields) {
+    if (!selectedProspect) return;
+    try {
+      const nextProspect = await updateProspect({
+        id: selectedProspect.id,
+        ...fields,
+        last_activity_at: new Date().toISOString()
+      });
+      upsertProspect(nextProspect);
+      setToast({ tone: "success", message: "Prospecto actualizado." });
+    } catch (error) {
+      setToast({ tone: "error", message: error.message || "No se pudo actualizar el prospecto." });
+    }
+  }
+
   async function handleSeedDemo() {
     setBusy("demo");
     try {
@@ -454,6 +469,7 @@ function AppContent() {
         onMarkContacted={handleMarkContacted}
         onDelete={() => selectedProspect && handleDeleteProspect(selectedProspect)}
         onUpdateNotes={handleUpdateNotes}
+        onUpdateProspect={handleUpdateProspect}
         onUpdateNextAction={(action) => handleUpdateNextAction(action)}
       />
     );

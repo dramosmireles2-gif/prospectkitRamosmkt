@@ -33,7 +33,8 @@ function normalizeAnalysis(row) {
       max: revenueMax
     },
     weaknesses: row.weaknesses || [],
-    source: row.source
+    source: row.source,
+    digitalDiagnosis: row.digital_diagnosis || null
   };
 }
 
@@ -65,6 +66,8 @@ function normalizeProspect(row) {
     facebook: row.facebook || "",
     whatsapp: row.whatsapp || "",
     notes: row.notes || "",
+    websiteUrl: row.website_url || null,
+    socialNotes: row.social_notes || null,
     status: row.status,
     opportunityScore: row.opportunity_score || 0,
     salesLikelihoodScore: row.sales_likelihood_score || 0,
@@ -125,6 +128,8 @@ export async function createProspect(workspaceId, input) {
     facebook: input.facebook?.trim() || null,
     whatsapp: input.whatsapp?.trim() || null,
     notes: input.notes?.trim() || null,
+    website_url: input.websiteUrl?.trim() || null,
+    social_notes: input.socialNotes?.trim() || null,
     status: "new",
     opportunity_score: opportunityScore,
     sales_likelihood_score: salesLikelihoodScore,
@@ -142,11 +147,13 @@ export async function createProspect(workspaceId, input) {
 }
 
 export async function updateProspect(input) {
-  const { id, ...rest } = input;
+  const { id, websiteUrl, socialNotes, ...rest } = input;
   const payload = {
     ...rest,
     updated_at: new Date().toISOString()
   };
+  if (websiteUrl !== undefined) payload.website_url = websiteUrl;
+  if (socialNotes !== undefined) payload.social_notes = socialNotes;
 
   const { error } = await supabase.from("prospects").update(payload).eq("id", id);
   if (error) {
@@ -212,6 +219,7 @@ export async function saveProspectAnalysis({ workspaceId, prospectId, analysis }
       revenue_max: analysis.revenue.max,
       weaknesses: analysis.weaknesses,
       source: analysis.source,
+      digital_diagnosis: analysis.digitalDiagnosis || null,
       updated_at: new Date().toISOString()
     },
     { onConflict: "prospect_id" }
@@ -252,12 +260,28 @@ export async function saveProspectKit({ workspaceId, prospectId, kit }) {
   });
 }
 
+async function generateAnalysisWithAI(prospect) {
+  try {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prospect })
+    });
+    if (!response.ok) return null;
+    const { analysis } = await response.json();
+    return analysis || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureProspectAnalysis(workspaceId, prospect) {
   if (prospect.analysis) {
     return prospect;
   }
 
-  const analysis = generateProspectAnalysis(prospect);
+  const aiAnalysis = await generateAnalysisWithAI(prospect);
+  const analysis = aiAnalysis || generateProspectAnalysis(prospect);
   return saveProspectAnalysis({
     workspaceId,
     prospectId: prospect.id,
@@ -266,7 +290,8 @@ export async function ensureProspectAnalysis(workspaceId, prospect) {
 }
 
 export async function regenerateProspectAnalysis(workspaceId, prospect) {
-  const analysis = generateProspectAnalysis(prospect);
+  const aiAnalysis = await generateAnalysisWithAI(prospect);
+  const analysis = aiAnalysis || generateProspectAnalysis(prospect);
   return saveProspectAnalysis({
     workspaceId,
     prospectId: prospect.id,

@@ -53,7 +53,9 @@ function NewProspectModal({ onClose, onAdd, busy }) {
     instagram: "",
     facebook: "",
     whatsapp: "",
-    notes: ""
+    notes: "",
+    websiteUrl: "",
+    socialNotes: ""
   });
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -78,6 +80,14 @@ function NewProspectModal({ onClose, onAdd, busy }) {
           <Field label="WhatsApp" value={form.whatsapp} onChange={(value) => setForm((current) => ({ ...current, whatsapp: value }))} placeholder="+52 81 0000 0000" type="tel" error={fieldErrors.whatsapp} />
         </div>
         <Field label="Notas" value={form.notes} onChange={(value) => setForm((current) => ({ ...current, notes: value }))} placeholder="Contexto del negocio, observaciones y oportunidades." textarea />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Field label="Sitio web (opcional)" value={form.websiteUrl} onChange={(value) => setForm((current) => ({ ...current, websiteUrl: value }))} placeholder="https://ejemplo.com" type="url" />
+          <div style={{ fontSize: 11, color: theme.muted, marginTop: -2 }}>Si tiene sitio, Claude lo analizará al generar el análisis</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Field label="Redes sociales — qué observaste (opcional)" value={form.socialNotes} onChange={(value) => setForm((current) => ({ ...current, socialNotes: value }))} placeholder="Ej: Instagram activo, ~800 seguidores, últimos posts hace 3 semanas. Facebook con reseñas pero sin respuestas..." textarea rows={3} />
+          <div style={{ fontSize: 11, color: theme.muted, marginTop: -2 }}>Describe brevemente lo que viste en sus perfiles</div>
+        </div>
         <div style={{ display: "flex", gap: 10 }}>
           <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancelar

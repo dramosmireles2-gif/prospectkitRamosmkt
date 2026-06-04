@@ -30,11 +30,14 @@ function SocialRow({ icon, label, value }) {
   );
 }
 
-export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, onUpdateNextAction, busy }) {
+export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegenerateAnalysis, onGenerateKit, onMarkContacted, onDelete, onUpdateNotes, onUpdateProspect, onUpdateNextAction, busy }) {
   const isMobile = useIsMobile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [draftNotes, setDraftNotes] = useState("");
+  const [editingDigital, setEditingDigital] = useState(false);
+  const [draftWebsiteUrl, setDraftWebsiteUrl] = useState("");
+  const [draftSocialNotes, setDraftSocialNotes] = useState("");
   const [editingAction, setEditingAction] = useState(false);
   const [draftActionType, setDraftActionType] = useState("");
   const [draftActionDate, setDraftActionDate] = useState("");
@@ -174,6 +177,36 @@ export function DetailScreen({ prospect, onOpenView, onGenerateAnalysis, onRegen
               ) : (
                 <div style={{ fontSize: 13, color: prospect.notes ? theme.text : theme.dim, lineHeight: 1.65 }}>
                   {prospect.notes || "Sin notas. Haz clic en Editar para agregar."}
+                </div>
+              )}
+            </Card>
+            <Card style={{ padding: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Presencia digital real</div>
+                {editingDigital ? (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingDigital(false)}>Cancelar</Button>
+                    <Button variant="primary" size="sm" onClick={() => { onUpdateProspect && onUpdateProspect({ websiteUrl: draftWebsiteUrl, socialNotes: draftSocialNotes }); setEditingDigital(false); }}>Guardar</Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => { setDraftWebsiteUrl(prospect.websiteUrl || ""); setDraftSocialNotes(prospect.socialNotes || ""); setEditingDigital(true); }}>Editar</Button>
+                )}
+              </div>
+              {editingDigital ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <Field label="Sitio web" value={draftWebsiteUrl} onChange={setDraftWebsiteUrl} placeholder="https://ejemplo.com" type="url" />
+                  <Field label="Notas de redes sociales" value={draftSocialNotes} onChange={setDraftSocialNotes} placeholder="Ej: Instagram activo, ~800 seguidores, posts hace 3 semanas..." textarea rows={3} />
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 12, color: prospect.websiteUrl ? theme.text : theme.dim }}>
+                    <span style={{ color: theme.muted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>URL: </span>
+                    {prospect.websiteUrl || "No registrada"}
+                  </div>
+                  <div style={{ fontSize: 12, color: prospect.socialNotes ? theme.text : theme.dim, lineHeight: 1.5 }}>
+                    <span style={{ color: theme.muted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Redes: </span>
+                    {prospect.socialNotes || "Sin notas de redes sociales."}
+                  </div>
                 </div>
               )}
             </Card>

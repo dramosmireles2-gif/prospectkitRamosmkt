@@ -290,6 +290,22 @@ export function AnalysisScreen({ prospect, proposals = [], onGenerateAnalysis, o
           </div>
         </div>
 
+        {analysis.digitalDiagnosis && analysis.digitalDiagnosis.source !== "none" ? (
+          <Card style={{ padding: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+              Diagnóstico digital real
+            </div>
+            <div style={{ fontSize: 12, color: theme.muted, marginBottom: 10 }}>
+              {analysis.digitalDiagnosis.source === "website"
+                ? `🌐 Sitio analizado: ${analysis.digitalDiagnosis.url}`
+                : "📱 Basado en notas de redes sociales"}
+            </div>
+            <div style={{ fontSize: 13, color: theme.text, lineHeight: 1.65 }}>
+              {analysis.digitalDiagnosis.summary}
+            </div>
+          </Card>
+        ) : null}
+
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: theme.text, marginBottom: 12 }}>Plan de acción</div>
           <Card style={{ padding: 0, overflow: "hidden" }}>

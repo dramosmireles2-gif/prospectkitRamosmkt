@@ -2,6 +2,30 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+async function fetchWebsiteContent(url) {
+  try {
+    const normalized = url.startsWith("http") ? url : `https://${url}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(normalized, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ProspectKit/1.0)" }
+    });
+    clearTimeout(timeout);
+    const html = await response.text();
+    const text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 3000);
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 const RMKT_CATALOG = `
 CATÁLOGO RMKT (usa SOLO estos servicios en recommendedServices):
 - Landing Express: $1,500 MXN único | 1 página conversión, WhatsApp, mapa, móvil | icon: 🚀
@@ -38,18 +62,29 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "prospect.name requerido" });
   }
 
+  // Fetch website content if websiteUrl provided
+  let websiteContent = null;
+  if (prospect.websiteUrl) {
+    websiteContent = await fetchWebsiteContent(prospect.websiteUrl);
+  }
+
+  // Build digital presence section for prompt
+  const digitalSection = (websiteContent || prospect.socialNotes)
+    ? `\n## Presencia digital real (datos observados)\n${websiteContent ? `### Contenido del sitio web (${prospect.websiteUrl})\n${websiteContent}` : "Sin sitio web accesible."}\n\n${prospect.socialNotes ? `### Notas de redes sociales (observadas por el vendedor)\n${prospect.socialNotes}` : "Sin notas de redes sociales."}\n\nUsa estos datos reales para enriquecer el análisis. Si el sitio existe pero es básico/desactualizado, refléjalo en missingFeatures y opportunities. Si las redes muestran actividad reciente o buen engagement, ajusta el score de oportunidad.\n`
+    : "";
+
   const prompt = `Eres Carlos Ramos de RamosMKT, agencia digital en Reynosa, Tamaulipas. Analiza este prospecto y recomienda los servicios más adecuados de tu catálogo real.
 
 PROSPECTO:
 - Nombre: ${prospect.name}
 - Industria: ${prospect.industry}
 - Ciudad: ${prospect.city}
-- Sitio web: ${prospect.website || "No tiene"}
+- Sitio web registrado: ${prospect.website || "No tiene"}
 - Instagram: ${prospect.instagram || "No tiene"}
 - Facebook: ${prospect.facebook || "No tiene"}
 - WhatsApp: ${prospect.whatsapp || "No tiene"}
 - Notas: ${prospect.notes || "Sin notas"}
-
+${digitalSection}
 ${RMKT_CATALOG}
 
 CRITERIO DE RECOMENDACIÓN:
@@ -103,7 +138,7 @@ Reglas:
   try {
     const message = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 1200,
+      max_tokens: 1400,
       messages: [{ role: "user", content: prompt }]
     });
 
@@ -112,6 +147,23 @@ Reglas:
     const jsonEnd = raw.lastIndexOf("}") + 1;
     const analysis = JSON.parse(raw.slice(jsonStart, jsonEnd));
     analysis.version = 2;
+
+    // Build digitalDiagnosis block
+    if (websiteContent) {
+      analysis.digitalDiagnosis = {
+        source: "website",
+        url: prospect.websiteUrl,
+        summary: analysis._websiteSummary || `Se analizó el contenido del sitio ${prospect.websiteUrl}. Los datos reales del sitio fueron incorporados al análisis.`
+      };
+    } else if (prospect.socialNotes) {
+      analysis.digitalDiagnosis = {
+        source: "social_notes",
+        summary: prospect.socialNotes
+      };
+    } else {
+      analysis.digitalDiagnosis = { source: "none" };
+    }
+    delete analysis._websiteSummary;
 
     return res.status(200).json({ analysis });
   } catch (error) {
