@@ -36,10 +36,12 @@ function getActiveProposal(proposals) {
 }
 
 function buildServiceFromCatalog(item, proposalService) {
+  const isAnual = item.type === "anual";
   return {
     ...item,
     billingType: item.type,
     oneTimePrice: item.type === "unico" ? (proposalService?.negotiatedPrice ?? item.price) : 0,
+    anualPrice: isAnual ? (proposalService?.negotiatedPrice ?? item.price) : 0,
     setupPrice: item.type === "setup+mensual" ? (proposalService?.negotiatedSetupPrice ?? item.setupPrice) : 0,
     monthlyPrice:
       item.type === "mensual" || item.type === "setup+mensual"
@@ -74,9 +76,10 @@ export function ROIScreen({ prospect, proposals, onBack }) {
   );
 
   const totalInitial = activeServices.reduce((sum, service) => sum + getOneTimePrice(service) + getSetupPrice(service), 0);
+  const totalAnual = activeServices.reduce((sum, service) => sum + (service.anualPrice || 0), 0);
   const totalMonthly = activeServices.reduce((sum, service) => sum + getRecurringPrice(service), 0);
   const totalClientMonthly = activeServices.reduce((sum, service) => sum + getClientMonthlyGain(service), 0);
-  const firstYearRmkt = totalInitial + totalMonthly * 12;
+  const firstYearRmkt = totalInitial + totalAnual + totalMonthly * 12;
   const firstYearClient = totalClientMonthly * 12;
   const roiPct = roi(firstYearRmkt, firstYearClient);
   const monthlyMargin = totalClientMonthly - totalMonthly;
@@ -100,12 +103,13 @@ export function ROIScreen({ prospect, proposals, onBack }) {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)", gap: 12 }}>
           {[
             { label: "Pago inicial", value: formatCurrency(totalInitial), sub: "sitio, setup o proyecto", color: theme.blue },
+            { label: "Anual (infra)", value: formatCurrency(totalAnual), sub: "dominio + hosting + mtt", color: "#9966ff" },
             { label: "Mensual RamosMKT", value: formatCurrency(totalMonthly), sub: "recurrente", color: theme.accent },
             { label: "Cliente gana est.", value: formatCurrency(totalClientMonthly), sub: "por mes", color: theme.yellow },
-            { label: "ROI 12 meses", value: `${roiPct}%`, sub: "incluye inicial", color: roiPct >= 200 ? theme.accent : roiPct >= 100 ? theme.yellow : theme.blue }
+            { label: "ROI 12 meses", value: `${roiPct}%`, sub: "incluye inicial + anual", color: roiPct >= 200 ? theme.accent : roiPct >= 100 ? theme.yellow : theme.blue }
           ].map((metric) => (
             <div key={metric.label} style={{ background: theme.s2, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "16px 18px" }}>
               <div style={{ fontSize: 10, color: theme.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{metric.label}</div>
@@ -180,14 +184,24 @@ export function ROIScreen({ prospect, proposals, onBack }) {
                   </div>
 
                   <div style={{ display: "flex", gap: 24, flexShrink: 0, flexWrap: isMobile ? "wrap" : "nowrap" }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Cobro inicial</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.blue : theme.muted }}>{formatCurrency(getOneTimePrice(service) + getSetupPrice(service))}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Mensual</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.accent : theme.muted }}>{formatCurrency(getRecurringPrice(service))}</div>
-                    </div>
+                    {getOneTimePrice(service) + getSetupPrice(service) > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Cobro inicial</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.blue : theme.muted }}>{formatCurrency(getOneTimePrice(service) + getSetupPrice(service))}</div>
+                      </div>
+                    )}
+                    {service.anualPrice > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Anual</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: active ? "#9966ff" : theme.muted }}>{formatCurrency(service.anualPrice)}</div>
+                      </div>
+                    )}
+                    {getRecurringPrice(service) > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Mensual</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.accent : theme.muted }}>{formatCurrency(getRecurringPrice(service))}</div>
+                      </div>
+                    )}
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 10, color: theme.dim, marginBottom: 2 }}>Cliente gana est.</div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: active ? theme.yellow : theme.muted }}>{formatCurrency(clientGain)}<span style={{ fontSize: 10, fontWeight: 400 }}> /mes</span></div>
