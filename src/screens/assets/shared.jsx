@@ -25,16 +25,21 @@ export const BASE = {
   overflow: "hidden", position: "relative",
 };
 
-// Branding RamosMKT — siempre presente en templates
-// variant "horizontal" = logo completo | "isotipo" = solo símbolo
-export function Brand({ size = "md" }) {
-  const hHorizontal = size === "sm" ? 18 : size === "lg" ? 32 : 24;
-  const hReducido = size === "sm" ? 22 : size === "lg" ? 40 : 30;
+// Branding RamosMKT
+// variant="horizontal" → logo horizontal solo (para flyers)
+// variant="stacked"    → horizontal + reducido apilados (para showcase)
+export function Brand({ size = "md", variant = "horizontal" }) {
+  const h = size === "sm" ? 22 : size === "lg" ? 36 : 28;
+  if (variant === "stacked") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: h * 0.7, objectFit: "contain" }} />
+        <img src="/logo-rmkt-transparente.png" alt="RMKT" style={{ height: h, objectFit: "contain" }} />
+      </div>
+    );
+  }
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-      <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: hHorizontal, objectFit: "contain" }} />
-      <img src="/logo-rmkt-transparente.png" alt="RMKT" style={{ height: hReducido, objectFit: "contain" }} />
-    </div>
+    <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: h, objectFit: "contain" }} />
   );
 }
 
