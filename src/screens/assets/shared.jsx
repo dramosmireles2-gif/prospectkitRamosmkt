@@ -26,17 +26,13 @@ export const BASE = {
 };
 
 // Branding RamosMKT — siempre presente en templates
-export function Brand({ size = "md" }) {
-  const s = size === "sm" ? 20 : size === "lg" ? 32 : 24;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ width: s, height: s, borderRadius: Math.round(s * 0.22), background: R.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: Math.round(s * 0.5), color: "#000", flexShrink: 0 }}>R</div>
-      <div>
-        <div style={{ fontSize: size === "sm" ? 12 : size === "lg" ? 18 : 14, fontWeight: 800, color: R.text, lineHeight: 1.1 }}>RamosMKT</div>
-        <div style={{ fontSize: size === "sm" ? 8 : 10, color: R.dim, lineHeight: 1, letterSpacing: "0.08em" }}>RMKT Growth</div>
-      </div>
-    </div>
-  );
+// variant "horizontal" = logo completo | "isotipo" = solo símbolo
+export function Brand({ size = "md", variant = "horizontal" }) {
+  const h = size === "sm" ? 22 : size === "lg" ? 40 : 30;
+  if (variant === "isotipo") {
+    return <img src="/logo-isotipo-blanco.png" alt="RMKT" style={{ height: h, width: h, objectFit: "contain" }} />;
+  }
+  return <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: h, objectFit: "contain", filter: "brightness(0) invert(1)" }} />;
 }
 
 // CTA pill button
