@@ -277,7 +277,8 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
   );
 }
 
-export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false }) {
+export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false, prospects = [], onOpenProspect }) {
+  const [q, setQ] = useState("");
   const navigation = [
     { id: "dashboard", label: "Dashboard",     icon: "▦" },
     { id: "prospects", label: "Prospectos",    icon: "◉" },
@@ -402,6 +403,70 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
       {navigation.map((item) => (
         <NavItem key={item.id} {...item} active={view === item.id} onClick={setView} />
       ))}
+
+      {prospects.length > 0 && (
+        <div style={{ marginTop: 12, position: "relative" }}>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar prospecto..."
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${theme.border}`,
+              borderRadius: 8,
+              padding: "8px 12px",
+              color: theme.text,
+              fontSize: 12,
+              outline: "none",
+              boxSizing: "border-box"
+            }}
+          />
+          {q.length >= 2 && (() => {
+            const results = prospects.filter((p) =>
+              (p.name || "").toLowerCase().includes(q.toLowerCase()) ||
+              (p.industry || "").toLowerCase().includes(q.toLowerCase())
+            ).slice(0, 5);
+            if (!results.length) return null;
+            return (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  zIndex: 200,
+                  background: theme.s1,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: 8,
+                  marginTop: 4,
+                  overflow: "hidden"
+                }}
+              >
+                {results.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      onOpenProspect?.(p);
+                      setQ("");
+                    }}
+                    style={{
+                      padding: "9px 12px",
+                      cursor: "pointer",
+                      borderBottom: `1px solid ${theme.border}`
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = theme.s2; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: theme.muted }}>{p.industry}{p.city ? ` · ${p.city}` : ""}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {prospect ? (
         <div style={{ marginTop: 16 }}>

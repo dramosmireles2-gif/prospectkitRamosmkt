@@ -1,4 +1,5 @@
 import { EmptyState, Button } from "../components/Primitives";
+import { Onboarding } from "../components/Onboarding";
 import { theme } from "../app/theme";
 import { formatCompactCurrency } from "../utils/format";
 import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
@@ -22,28 +23,11 @@ function daysDiff(dateStr) {
   return Math.floor((today - target) / 86400000);
 }
 
-export function DashboardScreen({ prospects, metrics, proposals = [], activeProposalMap = {}, onOpenView, onSelectProspect, onSeedDemo, loading }) {
+export function DashboardScreen({ prospects, metrics, proposals = [], activeProposalMap = {}, onOpenView, onSelectProspect, onSeedDemo, loading, onCreateProspect }) {
   const isMobile = useIsMobile();
 
   if (!prospects.length) {
-    return (
-      <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-        <EmptyState
-          title="Tu workspace todavia esta vacio"
-          description="Crea tu primer prospecto o importa demo data para revisar el flujo completo con analisis, kit y assets."
-          actions={
-            <>
-              <Button variant="primary" onClick={() => onOpenView("prospects")}>
-                Crear prospecto
-              </Button>
-              <Button variant="secondary" onClick={onSeedDemo} disabled={loading}>
-                {loading ? "Cargando demo..." : "Importar demo"}
-              </Button>
-            </>
-          }
-        />
-      </div>
-    );
+    return <Onboarding onCreateProspect={onCreateProspect || (() => onOpenView("prospects"))} />;
   }
 
   const topPick = metrics.topProspect;

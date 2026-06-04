@@ -439,6 +439,7 @@ function AppContent() {
       onSelectProspect={(prospect) => setSelectedProspectId(prospect?.id || null)}
       onSeedDemo={handleSeedDemo}
       loading={busy === "demo"}
+      onCreateProspect={() => navigate(VIEWS.PROSPECTS)}
     />
   );
 
@@ -498,6 +499,13 @@ function AppContent() {
         onGenerateKit={() => handleGenerateKit(selectedProspect)}
         onRegenerateKit={() => handleRegenerateKit(selectedProspect)}
         onOpenAssets={() => navigate(VIEWS.ASSETS)}
+        onMarkContacted={async () => {
+          if (!selectedProspect) return;
+          const currentStage = selectedProspect.pipelineStage || "lead";
+          if (currentStage === "lead" || currentStage === "nuevo") {
+            await handleUpdatePipelineStage(selectedProspect.id, "contactado");
+          }
+        }}
       />
     );
   }
@@ -588,6 +596,11 @@ function AppContent() {
           profile={profile}
           workspace={workspace}
           onSignOut={signOut}
+          prospects={prospects}
+          onOpenProspect={(p) => {
+            setSelectedProspectId(p.id);
+            navigate(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+          }}
         />
         {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
       </div>
@@ -604,6 +617,11 @@ function AppContent() {
         profile={profile}
         workspace={workspace}
         onSignOut={signOut}
+        prospects={prospects}
+        onOpenProspect={(p) => {
+          setSelectedProspectId(p.id);
+          navigate(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+        }}
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>{loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}</div>
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
