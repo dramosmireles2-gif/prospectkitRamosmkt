@@ -28,12 +28,12 @@ export const BASE = {
 // Branding RamosMKT — siempre presente en templates
 // variant "horizontal" = logo completo | "isotipo" = solo símbolo
 export function Brand({ size = "md" }) {
-  const hLogo = size === "sm" ? 16 : size === "lg" ? 28 : 20;
-  const hIsotipo = size === "sm" ? 20 : size === "lg" ? 36 : 28;
+  const hHorizontal = size === "sm" ? 18 : size === "lg" ? 32 : 24;
+  const hReducido = size === "sm" ? 22 : size === "lg" ? 40 : 30;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-      <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: hLogo, objectFit: "contain" }} />
-      <img src="/logo-isotipo.png" alt="RMKT" style={{ height: hIsotipo, objectFit: "contain" }} />
+      <img src="/logo-horizontal.png" alt="RamosMKT Growth" style={{ height: hHorizontal, objectFit: "contain" }} />
+      <img src="/logo-rmkt-transparente.png" alt="RMKT" style={{ height: hReducido, objectFit: "contain" }} />
     </div>
   );
 }
