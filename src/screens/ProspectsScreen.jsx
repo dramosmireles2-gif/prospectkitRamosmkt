@@ -163,10 +163,15 @@ function ProspectCard({ prospect, onOpen }) {
   );
 }
 
-export function ProspectsScreen({ prospects, onCreate, onOpenProspect, onDeleteProspect, busy }) {
+export function ProspectsScreen({ prospects, onCreate, onOpenProspect, onDeleteProspect, busy, autoOpenModal = false, onModalClose }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(autoOpenModal);
+
+  function closeModal() {
+    setShowModal(false);
+    onModalClose?.();
+  }
 
   const filtered = prospects.filter((prospect) => {
     const query = search.toLowerCase();
@@ -267,10 +272,10 @@ export function ProspectsScreen({ prospects, onCreate, onOpenProspect, onDeleteP
       {showModal ? (
         <NewProspectModal
           busy={busy}
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           onAdd={async (form) => {
             await onCreate(form);
-            setShowModal(false);
+            closeModal();
           }}
         />
       ) : null}

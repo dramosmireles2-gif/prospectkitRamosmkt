@@ -97,6 +97,7 @@ function AppContent() {
   const [view, setView] = useState(VIEWS.DASHBOARD);
   const [prospects, setProspects] = useState([]);
   const [selectedProspectId, setSelectedProspectId] = useState(null);
+  const [openNewProspect, setOpenNewProspect] = useState(false);
   const [notice, setNotice] = useState("");
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState("");
@@ -439,7 +440,7 @@ function AppContent() {
       onSelectProspect={(prospect) => setSelectedProspectId(prospect?.id || null)}
       onSeedDemo={handleSeedDemo}
       loading={busy === "demo"}
-      onCreateProspect={() => navigate(VIEWS.PROSPECTS)}
+      onCreateProspect={() => { setOpenNewProspect(true); navigate(VIEWS.PROSPECTS); }}
     />
   );
 
@@ -449,6 +450,8 @@ function AppContent() {
         prospects={prospects}
         onCreate={handleCreateProspect}
         busy={busy === "create"}
+        autoOpenModal={openNewProspect}
+        onModalClose={() => setOpenNewProspect(false)}
         onOpenProspect={(prospect) => {
           setSelectedProspectId(prospect.id);
           setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
@@ -599,7 +602,7 @@ function AppContent() {
           prospects={prospects}
           onOpenProspect={(p) => {
             setSelectedProspectId(p.id);
-            navigate(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+            setView(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
           }}
         />
         {toast ? <Toast tone={toast.tone} message={toast.message} onClose={dismissToast} /> : null}
@@ -620,7 +623,7 @@ function AppContent() {
         prospects={prospects}
         onOpenProspect={(p) => {
           setSelectedProspectId(p.id);
-          navigate(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
+          setView(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
         }}
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>{loadingProspects ? <FullscreenLoader label="Cargando prospects..." /> : screen}</div>
