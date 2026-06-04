@@ -54,7 +54,6 @@ function NewProspectModal({ onClose, onAdd, busy }) {
     facebook: "",
     whatsapp: "",
     notes: "",
-    websiteUrl: "",
     socialNotes: ""
   });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -74,16 +73,15 @@ function NewProspectModal({ onClose, onAdd, busy }) {
           <Field label="Ciudad *" value={form.city} onChange={(value) => setForm((current) => ({ ...current, city: value }))} placeholder="Monterrey, NL" error={fieldErrors.city} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Website" value={form.website} onChange={(value) => setForm((current) => ({ ...current, website: value }))} placeholder="ejemplo.com" type="url" error={fieldErrors.website} />
           <Field label="Instagram" value={form.instagram} onChange={(value) => setForm((current) => ({ ...current, instagram: value }))} placeholder="@usuario" error={fieldErrors.instagram} />
           <Field label="Facebook" value={form.facebook} onChange={(value) => setForm((current) => ({ ...current, facebook: value }))} placeholder="NombrePagina" />
           <Field label="WhatsApp" value={form.whatsapp} onChange={(value) => setForm((current) => ({ ...current, whatsapp: value }))} placeholder="+52 81 0000 0000" type="tel" error={fieldErrors.whatsapp} />
         </div>
-        <Field label="Notas" value={form.notes} onChange={(value) => setForm((current) => ({ ...current, notes: value }))} placeholder="Contexto del negocio, observaciones y oportunidades." textarea />
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <Field label="Sitio web (opcional)" value={form.websiteUrl} onChange={(value) => setForm((current) => ({ ...current, websiteUrl: value }))} placeholder="https://ejemplo.com" type="url" />
-          <div style={{ fontSize: 11, color: theme.muted, marginTop: -2 }}>Si tiene sitio, Claude lo analizará al generar el análisis</div>
+          <Field label="Sitio web" value={form.website} onChange={(value) => setForm((current) => ({ ...current, website: value }))} placeholder="https://ejemplo.com" type="url" error={fieldErrors.website} />
+          <div style={{ fontSize: 11, color: theme.muted, marginTop: -2 }}>Claude analizará el sitio al generar el análisis</div>
         </div>
+        <Field label="Notas" value={form.notes} onChange={(value) => setForm((current) => ({ ...current, notes: value }))} placeholder="Contexto del negocio, observaciones y oportunidades." textarea />
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <Field label="Redes sociales — qué observaste (opcional)" value={form.socialNotes} onChange={(value) => setForm((current) => ({ ...current, socialNotes: value }))} placeholder="Ej: Instagram activo, ~800 seguidores, últimos posts hace 3 semanas. Facebook con reseñas pero sin respuestas..." textarea rows={3} />
           <div style={{ fontSize: 11, color: theme.muted, marginTop: -2 }}>Describe brevemente lo que viste en sus perfiles</div>

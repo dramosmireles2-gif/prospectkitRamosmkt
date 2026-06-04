@@ -66,7 +66,7 @@ function normalizeProspect(row) {
     facebook: row.facebook || "",
     whatsapp: row.whatsapp || "",
     notes: row.notes || "",
-    websiteUrl: row.website_url || null,
+    websiteUrl: row.website || null,
     socialNotes: row.social_notes || null,
     status: row.status,
     opportunityScore: row.opportunity_score || 0,
@@ -128,7 +128,6 @@ export async function createProspect(workspaceId, input) {
     facebook: input.facebook?.trim() || null,
     whatsapp: input.whatsapp?.trim() || null,
     notes: input.notes?.trim() || null,
-    website_url: input.websiteUrl?.trim() || null,
     social_notes: input.socialNotes?.trim() || null,
     status: "new",
     opportunity_score: opportunityScore,
@@ -152,7 +151,7 @@ export async function updateProspect(input) {
     ...rest,
     updated_at: new Date().toISOString()
   };
-  if (websiteUrl !== undefined) payload.website_url = websiteUrl;
+  if (websiteUrl !== undefined) payload.website = websiteUrl;
   if (socialNotes !== undefined) payload.social_notes = socialNotes;
 
   const { error } = await supabase.from("prospects").update(payload).eq("id", id);
