@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useFollowUpNotifications } from "../hooks/useFollowUpNotifications";
 import { Sidebar, Toast, EmptyState, Button } from "../components/Primitives";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "../contexts/WorkspaceContext";
@@ -109,6 +110,8 @@ function AppContent() {
   const selectedProspect = prospects.find((prospect) => prospect.id === selectedProspectId) || null;
   const activeProposalMap = getActiveProposalMap(allProposals);
   const metrics = buildDashboardMetrics(prospects, activeProposalMap);
+
+  useFollowUpNotifications(prospects);
 
   useEffect(() => {
     if (!workspace) {

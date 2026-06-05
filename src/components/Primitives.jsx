@@ -247,7 +247,7 @@ export function ScoreRing({ value, size = 76 }) {
   );
 }
 
-function NavItem({ id, label, icon, indent, active, onClick }) {
+function NavItem({ id, label, icon, indent, active, onClick, badge }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -272,15 +272,23 @@ function NavItem({ id, label, icon, indent, active, onClick }) {
     >
       <span style={{ flexShrink: 0, opacity: active ? 1 : 0.65 }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
-      {active ? <span style={{ width: 4, height: 4, borderRadius: "50%", background: theme.accent, flexShrink: 0 }} /> : null}
+      {badge > 0 && (
+        <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: theme.red, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px", flexShrink: 0 }}>
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+      {active && !badge && <span style={{ width: 4, height: 4, borderRadius: "50%", background: theme.accent, flexShrink: 0 }} />}
     </div>
   );
 }
 
 export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false, prospects = [], onOpenProspect }) {
   const [q, setQ] = useState("");
+  const today = new Date().toISOString().split("T")[0];
+  const overdueCount = prospects.filter(p => p.nextActionDate && p.nextActionDate <= today).length;
+
   const navigation = [
-    { id: "dashboard", label: "Dashboard",     icon: "▦" },
+    { id: "dashboard", label: "Dashboard",     icon: "▦", badge: overdueCount },
     { id: "prospects", label: "Prospectos",    icon: "◉" },
     { id: "pipeline",  label: "Pipeline",      icon: "⬦" },
     { id: "attack",    label: "Plan de Ataque",icon: "⚡" }
@@ -342,6 +350,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
                   justifyContent: "center",
                   gap: 4,
                   cursor: "pointer",
+                  position: "relative",
                   color: active ? theme.accent : theme.muted,
                   background: active ? "linear-gradient(180deg, rgba(0,255,136,0.14) 0%, rgba(0,255,136,0.07) 100%)" : "transparent",
                   border: active ? `1px solid ${theme.accentBorder}` : "1px solid transparent",
@@ -350,6 +359,11 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
                 }}
               >
                 <span style={{ fontSize: 17, lineHeight: 1, opacity: active ? 1 : 0.8 }}>{item.icon}</span>
+                {item.badge > 0 && (
+                  <span style={{ position: "absolute", top: 6, right: 8, minWidth: 16, height: 16, borderRadius: 8, background: theme.red, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                    {item.badge > 9 ? "9+" : item.badge}
+                  </span>
+                )}
                 <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, lineHeight: 1 }}>
                   {item.id === "attack" ? "Ataque" : item.label}
                 </span>
