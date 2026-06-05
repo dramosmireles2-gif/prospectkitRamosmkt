@@ -1,5 +1,29 @@
 import { formatCurrency } from "../utils/format";
 
+const CATALOG_STORAGE_KEY = (workspaceId) => `rmkt_catalog_v1_${workspaceId}`;
+
+export function getWorkspaceCatalog(workspaceId) {
+  if (!workspaceId) return SERVICE_CATALOG;
+  try {
+    const saved = localStorage.getItem(CATALOG_STORAGE_KEY(workspaceId));
+    if (!saved) return SERVICE_CATALOG;
+    const overrides = JSON.parse(saved);
+    return SERVICE_CATALOG.map(item => ({ ...item, ...(overrides[item.id] || {}) }));
+  } catch {
+    return SERVICE_CATALOG;
+  }
+}
+
+export function saveWorkspaceCatalog(workspaceId, overrides) {
+  if (!workspaceId) return;
+  localStorage.setItem(CATALOG_STORAGE_KEY(workspaceId), JSON.stringify(overrides));
+}
+
+export function resetWorkspaceCatalog(workspaceId) {
+  if (!workspaceId) return;
+  localStorage.removeItem(CATALOG_STORAGE_KEY(workspaceId));
+}
+
 export const SERVICE_CATALOG = [
   {
     id: "web",

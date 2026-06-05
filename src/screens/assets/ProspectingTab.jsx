@@ -348,14 +348,27 @@ export function ProspectingTab({ prospect, proposals, format }) {
   const photoSrc = photos[fmt.id] || null;
 
   const slugName = (prospect?.name || "prospect").toLowerCase().replace(/\s+/g, "-");
-  const { exportRef, downloading, message, download } = useAssetExport({
-    filename: `rmkt-prospecting-${templateId}-${slugName}-${fmt.id}`
+  const baseFilename = `rmkt-prospecting-${templateId}-${slugName}`;
+  const { exportRef, downloading, message, download, downloadAll } = useAssetExport({
+    filename: `${baseFilename}-${fmt.id}`
   });
+
+  // Refs para exportar los 3 formatos a la vez
+  const exportRefs = {
+    landscape: useRef(null),
+    square: useRef(null),
+    story: useRef(null),
+  };
 
   const typeKey = detectProjectType(prospect?.industry || "", prospect?.notes || "");
   const ptype = PROJECT_TYPES[typeKey] || PROJECT_TYPES.otro;
   const bullets = buildDynamicBullets(prospect, ptype);
   const rationale = buildFlyerRationale(prospect);
+
+  // Hook personalizado de IA si existe, si no el estático por industria
+  const flyerHook = prospect?.analysis?.flyerHook || ptype.hook;
+  const flyerHookAccent = prospect?.analysis?.flyerHookAccent || ptype.hookAccent;
+  const flyerSubheadline = prospect?.analysis?.flyerSubheadline || ptype.subheadline;
 
   function handlePhoto(e) {
     const file = e.target.files?.[0];
@@ -374,9 +387,12 @@ export function ProspectingTab({ prospect, proposals, format }) {
   const previewW = Math.round(fmt.w * previewScale);
   const previewH = Math.round(fmt.h * previewScale);
 
-  function renderTemplate(id) {
-    if (id === "flyer-oscuro") return <FlyerOscuro ptype={ptype} bullets={bullets} photoSrc={photoSrc} format={fmt} />;
-    if (id === "flyer-claro")  return <FlyerClaro  ptype={ptype} bullets={bullets} photoSrc={photoSrc} format={fmt} />;
+  function renderTemplate(id, overrideFmt, overridePhoto) {
+    const f = overrideFmt || fmt;
+    const photo = overridePhoto !== undefined ? overridePhoto : photoSrc;
+    const flyerPtype = { ...ptype, hook: flyerHook, hookAccent: flyerHookAccent, subheadline: flyerSubheadline };
+    if (id === "flyer-oscuro") return <FlyerOscuro ptype={flyerPtype} bullets={bullets} photoSrc={photo} format={f} />;
+    if (id === "flyer-claro")  return <FlyerClaro  ptype={flyerPtype} bullets={bullets} photoSrc={photo} format={f} />;
     return null;
   }
 
@@ -463,18 +479,30 @@ export function ProspectingTab({ prospect, proposals, format }) {
           <Button variant="secondary" size="md" onClick={() => download("png", fmt.w, fmt.h)} disabled={downloading}>
             PNG
           </Button>
-          <Button variant="primary" size="md" onClick={() => download("jpg", fmt.w, fmt.h)} disabled={downloading}>
+          <Button variant="secondary" size="md" onClick={() => download("jpg", fmt.w, fmt.h)} disabled={downloading}>
             JPG
+          </Button>
+          <Button variant="primary" size="md" onClick={() => downloadAll(exportRefs, FORMATS, baseFilename)} disabled={downloading}>
+            ZIP · 3 formatos
           </Button>
         </div>
       </div>
 
-      {/* Off-screen export canvas */}
+      {/* Off-screen export canvas — formato activo */}
       <div style={{ position: "fixed", left: -9999, top: 0, width: fmt.w, height: fmt.h, pointerEvents: "none" }}>
         <div ref={exportRef} style={{ width: fmt.w, height: fmt.h }}>
           {renderTemplate(templateId)}
         </div>
       </div>
+
+      {/* Off-screen renders para ZIP — uno por formato */}
+      {FORMATS.map(f => (
+        <div key={f.id} style={{ position: "fixed", left: -9999, top: 0, width: f.w, height: f.h, pointerEvents: "none" }}>
+          <div ref={exportRefs[f.id]} style={{ width: f.w, height: f.h }}>
+            {renderTemplate(templateId, f, photos[f.id])}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

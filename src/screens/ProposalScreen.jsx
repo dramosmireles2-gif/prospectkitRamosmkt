@@ -1,23 +1,10 @@
 import { useState } from "react";
 import { Button, Card, EmptyState } from "../components/Primitives";
+import { CatalogEditor } from "../components/CatalogEditor";
 import { theme } from "../app/theme";
 import { formatCurrency } from "../utils/format";
 import { useIsMobile } from "../hooks/useIsMobile";
-
-// type: "unico" | "mensual" | "setup+mensual"
-// price = pago único o mensual; setupPrice = cargo inicial cuando type === "setup+mensual"
-const CATALOG = [
-  { id: "web",      service: "Landing Page / Sitio web",   icon: "🌐", type: "unico",         price: 3500 },
-  { id: "ecom",     service: "Catálogo / Tienda online",   icon: "🛒", type: "setup+mensual", price: 800,  setupPrice: 4500 },
-  { id: "gmb",      service: "Google My Business",         icon: "📍", type: "mensual",        price: 800  },
-  { id: "ads",      service: "Meta Ads locales",           icon: "📣", type: "mensual",        price: 2200 },
-  { id: "social",   service: "Contenido orgánico",         icon: "✨", type: "mensual",        price: 1500 },
-  { id: "whatsapp", service: "WhatsApp Business",          icon: "💬", type: "mensual",        price: 900  },
-  { id: "seo",      service: "SEO local",                  icon: "🔍", type: "mensual",        price: 1200 },
-  { id: "email",    service: "Email marketing",            icon: "✉️", type: "mensual",        price: 1000 },
-  { id: "hosting",  service: "Dominio + Hosting",          icon: "☁️", type: "mensual",        price: 350  },
-  { id: "manten",   service: "Mantenimiento web",          icon: "🔧", type: "mensual",        price: 600  }
-];
+import { getWorkspaceCatalog } from "../services/serviceCatalog";
 
 const TYPE_LABEL = {
   unico:         { label: "Pago único",    color: theme.blue,   bg: "rgba(74,158,255,0.10)"  },
@@ -180,7 +167,7 @@ function VersionBadge({ version, status, date, isActive, onClick }) {
   );
 }
 
-export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) {
+export function ProposalScreen({ prospect, proposals, onSave, onBack, saving, workspaceId }) {
   const isMobile = useIsMobile();
   const sorted = [...(proposals || [])].sort((a, b) => b.version - a.version);
   const latest = sorted[0] || null;
@@ -189,6 +176,9 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
   const initialDraft = latest ? draftFromProposal(latest) : (prospect?.analysis ? draftFromAnalysis(prospect.analysis) : emptyDraft());
   const [draft, setDraft] = useState(initialDraft);
   const [addingService, setAddingService] = useState(false);
+  const [showCatalogEditor, setShowCatalogEditor] = useState(false);
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const CATALOG = getWorkspaceCatalog(workspaceId);
 
   if (!prospect) {
     return <EmptyState title="Selecciona un prospecto" description="La propuesta se vincula a un prospecto activo." />;
@@ -274,8 +264,21 @@ export function ProposalScreen({ prospect, proposals, onSave, onBack, saving }) 
           <div style={{ fontSize: 11, color: theme.dim, marginBottom: 2, letterSpacing: "0.04em" }}>{prospect.name}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: theme.text }}>Propuesta activa</div>
         </div>
+        <button
+          onClick={() => setShowCatalogEditor(true)}
+          title="Editar precios del catálogo"
+          style={{ background: "transparent", border: `1px solid ${theme.border}`, borderRadius: 8, padding: "6px 10px", color: theme.dim, fontSize: 16, cursor: "pointer", lineHeight: 1 }}
+        >⚙️</button>
         <Button variant="ghost" size="sm" onClick={onBack}>← Volver</Button>
       </div>
+
+      {showCatalogEditor && (
+        <CatalogEditor
+          workspaceId={workspaceId}
+          onClose={() => setShowCatalogEditor(false)}
+          onSaved={() => setCatalogVersion(v => v + 1)}
+        />
+      )}
 
       <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "180px 1fr" }}>
         {/* Version sidebar */}

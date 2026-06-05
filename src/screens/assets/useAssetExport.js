@@ -32,5 +32,45 @@ export function useAssetExport({ filename }) {
     }
   }
 
-  return { exportRef, downloading, message, download };
+  async function downloadAll(refs, formats, baseFilename) {
+    if (downloading) return;
+    setDownloading(true);
+    setMessage("Generando ZIP...");
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      for (const fmt of formats) {
+        const el = refs[fmt.id]?.current;
+        if (!el) continue;
+        setMessage(`Renderizando ${fmt.label}...`);
+        const canvas = await html2canvas(el, {
+          scale: 1,
+          backgroundColor: "#0a0a0f",
+          useCORS: true,
+          logging: false,
+          width: fmt.w,
+          height: fmt.h
+        });
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.95));
+        zip.file(`${baseFilename}-${fmt.id}.jpg`, blob);
+      }
+      setMessage("Comprimiendo...");
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.download = `${baseFilename}-todos.zip`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage("ZIP descargado ✓");
+    } catch {
+      setMessage("Error al generar ZIP");
+    } finally {
+      setDownloading(false);
+      setTimeout(() => setMessage(""), 2200);
+    }
+  }
+
+  return { exportRef, downloading, message, download, downloadAll };
 }

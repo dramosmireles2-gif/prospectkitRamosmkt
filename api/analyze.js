@@ -124,6 +124,9 @@ Devuelve SOLO este JSON (sin markdown):
   "weaknesses": ["<debilidad concreta y específica>"],
   "salesLikelihoodScore": <0-100>,
   "leadTemperature": <"frio"|"tibio"|"caliente"|"urgente">,
+  "flyerHook": "<pregunta impactante de 3-4 líneas separadas por \\n, 3-6 palabras por línea, específica para ESTE negocio y sus gaps reales>",
+  "flyerHookAccent": "<1-2 palabras del flyerHook que van resaltadas en verde — la palabra más poderosa>",
+  "flyerSubheadline": "<1 oración que describe qué va a cambiar para este negocio específico con RMKT>",
   "source": "claude"
 }
 
@@ -133,12 +136,15 @@ Reglas:
 - recommendedServices: exactamente 4, del más urgente al más estratégico
 - weaknesses: máximo 6, específicas para este negocio
 - salesLikelihoodScore: probabilidad de que este negocio COMPRE a una agencia digital (0-100). Considera: tiene presupuesto aparente, ya invirtió en digital, tamaño del negocio, señales en notas
-- leadTemperature: "frio" (0-50), "tibio" (51-70), "caliente" (71-85), "urgente" (86-100) basado en salesLikelihoodScore`;
+- leadTemperature: "frio" (0-50), "tibio" (51-70), "caliente" (71-85), "urgente" (86-100) basado en salesLikelihoodScore
+- flyerHook: debe reflejar el gap más crítico detectado en missingFeatures. Ejemplos: si no tiene web → "¿Cuántos clientes\npasan de largo\nporque no\nte encuentran?", si no tiene redes → "¿Tus competidores\nya tienen clientes\nque tú\nno ves?"
+- flyerHookAccent: solo las palabras clave que van en verde, máximo 2 palabras que estén literalmente en el flyerHook
+- flyerSubheadline: menciona el nombre del negocio o su industria específica, no genérica`;
 
   try {
     const message = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 1400,
+      max_tokens: 1600,
       messages: [{ role: "user", content: prompt }]
     });
 

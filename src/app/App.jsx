@@ -568,6 +568,7 @@ function AppContent() {
         onSave={handleSaveProposal}
         onBack={() => navigate(selectedProspect?.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL)}
         saving={savingProposal}
+        workspaceId={workspace?.id}
       />
     );
   }
