@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Button } from "../../components/Primitives";
 import { useAssetExport } from "./useAssetExport";
 import { R, BASE, FORMATS, Brand, Glow } from "./shared";
@@ -336,11 +336,56 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
   );
 }
 
+// ─── Generador de prompt para imagen IA ──────────────────────────────────────
+
+const INDUSTRY_VISUAL = {
+  clinica:    { scene: "interior de clínica moderna, consultorio limpio y profesional, silla de examinación, iluminación blanca cálida", mood: "profesional, limpio, confianza", palette: "blancos, azules suaves, detalles verdes" },
+  restaurante:{ scene: "mesa de restaurante con platillo bien presentado, vajilla elegante, fondo desenfocado con ambiente cálido", mood: "apetitoso, acogedor, moderno", palette: "tonos cálidos, ámbar, madera oscura" },
+  boutique:   { scene: "rack de ropa elegante, telas coloridas colgadas, ambiente de boutique bien iluminado", mood: "sofisticado, femenino, aspiracional", palette: "rosados, blancos, dorados, neutros" },
+  ecommerce:  { scene: "productos bien acomodados sobre superficie limpia, packaging moderno, luz cenital perfecta", mood: "limpio, premium, comercial", palette: "fondo blanco o gris claro, colores del producto" },
+  fitness:    { scene: "gimnasio moderno con equipo de ejercicio, iluminación dramática, pesas o máquinas de fondo", mood: "energético, motivador, poderoso", palette: "negro, gris, detalles naranja o verde neón" },
+  iglesia:    { scene: "espacio de adoración moderno, sillas ordenadas, iluminación suave y cálida, cruz o altar de fondo", mood: "espiritual, cálido, comunitario", palette: "blancos, dorados, madera natural" },
+  sistema:    { scene: "escritorio moderno con laptop y pantalla mostrando dashboard de datos, oficina corporativa", mood: "tecnológico, profesional, eficiente", palette: "azul oscuro, gris, detalles cyan o verde" },
+  invitacion: { scene: "mesa decorada con flores, detalles de fiesta o boda, elementos decorativos elegantes", mood: "festivo, elegante, especial", palette: "dorado, blanco, rosa o colores del evento" },
+  otro:       { scene: "espacio de negocio moderno y profesional, ambiente limpio y ordenado", mood: "profesional, confiable, moderno", palette: "neutros con un color de acento" },
+};
+
+function buildImagePrompt(prospect, ptype, templateId) {
+  const typeKey = detectProjectType(prospect?.industry || "", prospect?.notes || "");
+  const visual = INDUSTRY_VISUAL[typeKey] || INDUSTRY_VISUAL.otro;
+  const isDark = templateId === "flyer-oscuro";
+  const name = prospect?.name || "el negocio";
+  const city = prospect?.city ? ` en ${prospect.city}` : "";
+  const missing = (prospect?.analysis?.missingFeatures || []).filter(f => f.critical).slice(0, 2);
+  const context = missing.length
+    ? `El negocio actualmente no tiene: ${missing.map(f => f.name).join(", ")}.`
+    : "";
+
+  return `Photorealistic marketing photo for a digital flyer targeting ${ptype.label} businesses${city}.
+
+SCENE: ${visual.scene}. The image must have a clear subject on the RIGHT side (40% of the frame) and a darker, blurred or plain area on the LEFT side (60%) where text will be placed.
+
+MOOD: ${visual.mood}. High-end commercial photography style.
+COLOR PALETTE: ${isDark ? `Dark background (#0a0a0f near black), ${visual.palette}, subtle green accent glow (#00ff88)` : `Clean white or very light background, ${visual.palette}, fresh and minimal`}.
+
+COMPOSITION RULES (critical):
+- Subject centered vertically, positioned on the right third
+- Left 60% must be clean, dark/blurred background — NO elements there
+- No text, no logos, no watermarks anywhere
+- No people's faces in close-up (business environment only)
+- Sharp subject, soft bokeh background
+
+TECHNICAL: Square format 1:1 ratio (1080×1080px), so it crops well to landscape (1200×630) and story (1080×1920). Shot at f/2.8, natural + studio lighting. Ultra realistic, 8K detail.
+
+CONTEXT: ${context} This image will be used in a prospecting flyer for RamosMKT digital agency to approach ${name}.`.trim();
+}
+
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export function ProspectingTab({ prospect, proposals, format }) {
   const fmt = format || FORMATS[0];
   const [templateId, setTemplateId] = useState("flyer-oscuro");
+  const [promptCopied, setPromptCopied] = useState(false);
   // Foto independiente por formato
   const [photos, setPhotos] = useState({ landscape: null, square: null, story: null });
   const photoInputRef = useRef(null);
@@ -382,6 +427,14 @@ export function ProspectingTab({ prospect, proposals, format }) {
   function removePhoto() {
     setPhotos(p => ({ ...p, [fmt.id]: null }));
   }
+
+  const copyImagePrompt = useCallback(() => {
+    const prompt = buildImagePrompt(prospect, ptype, templateId);
+    navigator.clipboard.writeText(prompt).then(() => {
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2500);
+    });
+  }, [prospect, ptype, templateId]);
 
   const previewScale = Math.min(600 / fmt.w, 400 / fmt.h);
   const previewW = Math.round(fmt.w * previewScale);
@@ -430,6 +483,20 @@ export function ProspectingTab({ prospect, proposals, format }) {
           Cada formato tiene su propia foto
         </div>
         <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhoto} />
+
+        {/* Prompt para imagen IA */}
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, padding: "10px 4px 2px" }}>Imagen con IA</div>
+        <div
+          onClick={copyImagePrompt}
+          style={{ padding: "10px 13px", borderRadius: 9, cursor: "pointer", background: promptCopied ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.03)", border: `1px solid ${promptCopied ? "rgba(0,255,136,0.3)" : "rgba(255,255,255,0.08)"}`, transition: "all 180ms ease" }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 600, color: promptCopied ? R.accent : "rgba(255,255,255,0.7)", marginBottom: 3 }}>
+            {promptCopied ? "✓ Prompt copiado" : "📋 Copiar prompt"}
+          </div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+            Pégalo en ChatGPT o Midjourney para generar la foto del negocio
+          </div>
+        </div>
 
         {/* Templates */}
         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, padding: "10px 4px 2px" }}>Plantillas</div>
