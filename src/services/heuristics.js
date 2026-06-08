@@ -383,12 +383,12 @@ export function generateProspectKit(prospect, analysis) {
 
   return {
     channelMessages: {
-      whatsapp: `Hola. Vi ${prospect.name} en ${prospect.city} y detecte una oportunidad clara para crecer con ${topService.toLowerCase()}.\n\nSoy Carlos de RamosMKT. Ayudo a negocios como ${prospect.name} a ordenar su captacion digital y convertir mas contactos en clientes.\n\nTe puedo compartir un mini diagnostico en 10 minutos?`,
+      whatsapp: `Hola. Vi ${prospect.name} en ${prospect.city} y detecte una oportunidad clara para crecer con ${topService.toLowerCase()}.\n\nSoy Carlos de RamosGrowth. Ayudo a negocios como ${prospect.name} a ordenar su captacion digital y convertir mas contactos en clientes.\n\nTe puedo compartir un mini diagnostico en 10 minutos?`,
       instagram: `Hola. Estuve revisando ${prospect.name} y vi una oportunidad muy fuerte para crecer con ${topService.toLowerCase()}. Si quieres, te comparto un diagnostico corto y accionable sin costo.`,
-      facebook: `Hola equipo de ${prospect.name}. Soy Carlos de RamosMKT. Detecte varias mejoras de captacion digital, empezando por ${topService.toLowerCase()}. Les interesa que les comparta un analisis breve y practico?`,
+      facebook: `Hola equipo de ${prospect.name}. Soy Carlos de RamosGrowth. Detecte varias mejoras de captacion digital, empezando por ${topService.toLowerCase()}. Les interesa que les comparta un analisis breve y practico?`,
       email: {
         subject: `Diagnostico digital para ${prospect.name}`,
-        body: `Hola equipo de ${prospect.name},\n\nRevise su presencia digital y encontre una oportunidad fuerte para crecer con ${topService.toLowerCase()}.\n\nHallazgos principales:\n${weaknessList.map((item) => `- ${item}`).join("\n")}\n\nSi quieren, les comparto un plan concreto con prioridades, estimado de impacto y siguientes pasos.\n\nCarlos Ramos\nRamosMKT`
+        body: `Hola equipo de ${prospect.name},\n\nRevise su presencia digital y encontre una oportunidad fuerte para crecer con ${topService.toLowerCase()}.\n\nHallazgos principales:\n${weaknessList.map((item) => `- ${item}`).join("\n")}\n\nSi quieren, les comparto un plan concreto con prioridades, estimado de impacto y siguientes pasos.\n\nCarlos Ramos\nRamosGrowth`
       }
     },
     proposalSnapshot: {

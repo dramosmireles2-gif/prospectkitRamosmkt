@@ -80,7 +80,7 @@ function ShowcaseTemplate({ templateId, project, format }) {
             </div>
             <CTABadge text={typeConfig.cta} />
           </div>
-          <div style={{ fontSize: 12, color: R.dim }}>#{industry.replace(/\s+/g, "")} #RamosMKT #DesarrolloWeb</div>
+          <div style={{ fontSize: 12, color: R.dim }}>#{industry.replace(/\s+/g, "")} #RamosGrowth #DesarrolloWeb</div>
         </div>
       </div>
     );
@@ -144,7 +144,7 @@ function ShowcaseTemplate({ templateId, project, format }) {
             <div style={{ fontSize: isStory ? 52 : 44, fontWeight: 900, color: R.text, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}>{mainFeature}</div>
             <div style={{ fontSize: 16, color: R.muted }}>Implementado en <strong style={{ color: R.text }}>{name}</strong></div>
           </div>
-          <div style={{ fontSize: 12, color: R.dim }}>#{typeConfig.label.replace(/\s+\/\s+/g, "").replace(/\s+/g, "")} #RamosMKT</div>
+          <div style={{ fontSize: 12, color: R.dim }}>#{typeConfig.label.replace(/\s+\/\s+/g, "").replace(/\s+/g, "")} #RamosGrowth</div>
         </div>
       </div>
     );
@@ -177,7 +177,7 @@ function ShowcaseTemplate({ templateId, project, format }) {
               </div>
             )}
             <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ fontSize: 12, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 18 }}>Después con RamosMKT</div>
+              <div style={{ fontSize: 12, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 18 }}>Después con RamosGrowth</div>
               {afterBullets.map((item, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
                   <span style={{ color: R.accent, fontWeight: 900, fontSize: 15, flexShrink: 0, lineHeight: 1.4 }}>✓</span>
@@ -424,7 +424,7 @@ function ShowcaseTemplate({ templateId, project, format }) {
           </div>
           <div>
             <CTABadge text={typeConfig.cta} />
-            <div style={{ marginTop: 12, fontSize: 12, color: R.dim }}>#RamosMKT #{industry.replace(/\s+/g, "")}</div>
+            <div style={{ marginTop: 12, fontSize: 12, color: R.dim }}>#RamosGrowth #{industry.replace(/\s+/g, "")}</div>
           </div>
         </div>
       </div>

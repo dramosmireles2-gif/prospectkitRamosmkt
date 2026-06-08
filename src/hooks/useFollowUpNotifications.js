@@ -40,14 +40,14 @@ export function useFollowUpNotifications(prospects = []) {
     if (overdue.length === 1) {
       const p = overdue[0];
       const actionLabel = ACTION_LABELS[p.nextActionType] || "Seguimiento";
-      new Notification(`RamosMKT — Seguimiento pendiente`, {
+      new Notification(`RamosGrowth — Seguimiento pendiente`, {
         body: `${actionLabel}: ${p.name} (${p.industry || "sin industria"})`,
         icon: "/logo-isotipo.png",
         tag: `rmkt-followup-${p.id}`,
       });
       notifiedRef.current.add(p.id);
     } else {
-      new Notification(`RamosMKT — ${overdue.length} seguimientos vencidos`, {
+      new Notification(`RamosGrowth — ${overdue.length} seguimientos vencidos`, {
         body: overdue.slice(0, 3).map((p) => `· ${p.name}`).join("\n") + (overdue.length > 3 ? `\n· y ${overdue.length - 3} más...` : ""),
         icon: "/logo-isotipo.png",
         tag: "rmkt-followups-batch",

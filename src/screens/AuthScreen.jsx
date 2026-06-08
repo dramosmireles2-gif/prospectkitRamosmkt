@@ -61,7 +61,7 @@ export function AuthScreen({ onSignIn, onSignUp, busy, notice }) {
       <Card style={{ width: "min(470px, 100%)", padding: 28 }}>
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 12, color: theme.accent, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-            RamosMKT CRM
+            RamosGrowth CRM
           </div>
           <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", marginBottom: 8 }}>ProspectKit</div>
           <div style={{ fontSize: 14, color: theme.muted, lineHeight: 1.7 }}>

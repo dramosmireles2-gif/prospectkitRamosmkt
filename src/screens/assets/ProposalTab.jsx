@@ -10,7 +10,7 @@ import { R, BASE, Brand } from "./shared";
 const TEMPLATES = [
   { id: "propuesta-completa",  label: "Propuesta Completa",   desc: "Servicios, precios negociados y totales del año" },
   { id: "roadmap-visual",      label: "Roadmap Visual",        desc: "4 fases de implementación con hitos clave" },
-  { id: "comparativa-digital", label: "Actual vs RamosMKT",   desc: "Transformación digital: situación actual vs futuro" },
+  { id: "comparativa-digital", label: "Actual vs RamosGrowth",   desc: "Transformación digital: situación actual vs futuro" },
 ];
 
 function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
@@ -142,7 +142,7 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
       <div style={{ ...BASE, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: isStory ? "40px 48px 20px" : "24px 52px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Actual vs Con RamosMKT</div>
+            <div style={{ fontSize: 11, color: R.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Actual vs Con RamosGrowth</div>
             <div style={{ fontSize: isStory ? 36 : 26, fontWeight: 900, color: R.text, letterSpacing: "-0.02em" }}>{prospect?.name || "Tu negocio"}</div>
           </div>
           <Brand />
@@ -158,9 +158,9 @@ function ProposalTemplate({ id, prospect, format, pricingSnapshot }) {
               </div>
             ))}
           </div>
-          {/* Right: Con RamosMKT */}
+          {/* Right: Con RamosGrowth */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 12, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Con RamosMKT</div>
+            <div style={{ fontSize: 12, color: R.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Con RamosGrowth</div>
             {rightRows.slice(0, visibleCount).map(row => (
               <div key={row} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: "rgba(0,255,136,0.05)", border: "1px solid rgba(0,255,136,0.15)", borderRadius: 9 }}>
                 <span style={{ color: R.accent, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>✓</span>

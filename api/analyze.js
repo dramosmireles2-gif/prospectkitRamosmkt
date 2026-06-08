@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     ? `\n## Presencia digital real (datos observados)\n${websiteContent ? `### Contenido del sitio web (${prospect.websiteUrl})\n${websiteContent}` : "Sin sitio web accesible."}\n\n${prospect.socialNotes ? `### Notas de redes sociales (observadas por el vendedor)\n${prospect.socialNotes}` : "Sin notas de redes sociales."}\n\nUsa estos datos reales para enriquecer el análisis. Si el sitio existe pero es básico/desactualizado, refléjalo en missingFeatures y opportunities. Si las redes muestran actividad reciente o buen engagement, ajusta el score de oportunidad.\n`
     : "";
 
-  const prompt = `Eres Carlos Ramos de RamosMKT, agencia digital en Reynosa, Tamaulipas. Analiza este prospecto y recomienda los servicios más adecuados de tu catálogo real.
+  const prompt = `Eres Carlos Ramos de RamosGrowth, agencia digital en Reynosa, Tamaulipas. Analiza este prospecto y recomienda los servicios más adecuados de tu catálogo real.
 
 PROSPECTO:
 - Nombre: ${prospect.name}

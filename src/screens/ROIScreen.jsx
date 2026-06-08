@@ -107,7 +107,7 @@ export function ROIScreen({ prospect, proposals, onBack }) {
           {[
             { label: "Pago inicial", value: formatCurrency(totalInitial), sub: "sitio, setup o proyecto", color: theme.blue },
             { label: "Anual (infra)", value: formatCurrency(totalAnual), sub: "dominio + hosting + mtt", color: "#9966ff" },
-            { label: "Mensual RamosMKT", value: formatCurrency(totalMonthly), sub: "recurrente", color: theme.accent },
+            { label: "Mensual RamosGrowth", value: formatCurrency(totalMonthly), sub: "recurrente", color: theme.accent },
             { label: "Cliente gana est.", value: formatCurrency(totalClientMonthly), sub: "por mes", color: theme.yellow },
             { label: "ROI 12 meses", value: `${roiPct}%`, sub: "incluye inicial + anual", color: roiPct >= 200 ? theme.accent : roiPct >= 100 ? theme.yellow : theme.blue }
           ].map((metric) => (
@@ -126,7 +126,7 @@ export function ROIScreen({ prospect, proposals, onBack }) {
           </div>
           <div style={{ display: "flex", gap: isMobile ? 18 : 32, flexShrink: 0, width: isMobile ? "100%" : "auto", flexDirection: isMobile ? "column" : "row" }}>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: theme.muted, marginBottom: 2 }}>RamosMKT 12 meses</div>
+              <div style={{ fontSize: 11, color: theme.muted, marginBottom: 2 }}>RamosGrowth 12 meses</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: theme.accent }}>{formatCurrency(firstYearRmkt)}</div>
             </div>
             <div style={{ textAlign: "right" }}>

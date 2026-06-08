@@ -326,7 +326,7 @@ export function KitScreen({ prospect, onGenerateKit, onRegenerateKit, onOpenAsse
                     ))}
                   </div>
                   <div style={{ padding: 18, background: theme.accentBg, borderRadius: 10, border: `1px solid ${theme.accentBorder}` }}>
-                    <div style={{ fontSize: 11, color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Con RamosMKT</div>
+                    <div style={{ fontSize: 11, color: theme.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Con RamosGrowth</div>
                     {proposal.after.map((item) => (
                       <div key={item} style={{ display: "flex", gap: 8, marginBottom: 9, fontSize: 13, color: theme.muted }}>
                         <span style={{ color: theme.accent, flexShrink: 0, fontWeight: 700 }}>✓</span> {item}

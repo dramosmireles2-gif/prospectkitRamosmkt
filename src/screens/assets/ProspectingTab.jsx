@@ -377,7 +377,7 @@ COMPOSITION RULES (critical):
 
 TECHNICAL: Square format 1:1 ratio (1080×1080px), so it crops well to landscape (1200×630) and story (1080×1920). Shot at f/2.8, natural + studio lighting. Ultra realistic, 8K detail.
 
-CONTEXT: ${context} This image will be used in a prospecting flyer for RamosMKT digital agency to approach ${name}.`.trim();
+CONTEXT: ${context} This image will be used in a prospecting flyer for RamosGrowth digital agency to approach ${name}.`.trim();
 }
 
 // ─── Main component ─────────────────────────────────────────────────────────

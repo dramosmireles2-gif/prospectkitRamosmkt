@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   const weaknesses = (analysis.weaknesses || []).slice(0, 3).join(", ");
   const upsell = analysis.recommendedServices?.[1]?.service || "";
 
-  const prompt = `Eres Carlos Ramos de RamosMKT (ramosmkt.lat), agencia tecnológica en Reynosa, Tam. Creas mensajes de prospección personalizados y directos para PyMEs mexicanas.
+  const prompt = `Eres Carlos Ramos de RamosGrowth (ramosmkt.lat), agencia tecnológica en Reynosa, Tam. Creas mensajes de prospección personalizados y directos para PyMEs mexicanas.
 
 PROSPECTO: ${prospect.name} | ${prospect.industry} | ${prospect.city}
 SERVICIO PRINCIPAL A VENDER: ${topService}${topPrice ? ` — desde $${topPrice.toLocaleString()} MXN${topUnit}` : ""}
@@ -29,12 +29,12 @@ SCORE: ${analysis.opportunityScore}/100
 Devuelve SOLO este JSON (sin markdown):
 {
   "channelMessages": {
-    "whatsapp": "<mensaje directo, máx 3 párrafos cortos, tono consultivo no vendedor, emoji de apertura, termina con pregunta concreta, firma Carlos / RamosMKT>",
+    "whatsapp": "<mensaje directo, máx 3 párrafos cortos, tono consultivo no vendedor, emoji de apertura, termina con pregunta concreta, firma Carlos / RamosGrowth>",
     "instagram": "<DM casual, máx 2 líneas, directo y humano, sin emojis exagerados>",
     "facebook": "<mensaje profesional para página, máx 2 párrafos, menciona hallazgo específico del negocio>",
     "email": {
       "subject": "<asunto concreto con el nombre del negocio, no genérico>",
-      "body": "<email profesional 3-4 párrafos: apertura con hallazgo específico, 2-3 puntos del diagnóstico, CTA claro con precio o siguiente paso, firma Carlos Ramos / RamosMKT / ramosmkt.lat / +52 814 807 8309>"
+      "body": "<email profesional 3-4 párrafos: apertura con hallazgo específico, 2-3 puntos del diagnóstico, CTA claro con precio o siguiente paso, firma Carlos Ramos / RamosGrowth / ramosmkt.lat / +52 814 807 8309>"
     }
   },
   "proposalSnapshot": {

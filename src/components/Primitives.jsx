@@ -393,7 +393,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
         <img src="/logo-isotipo.png" alt="RMKT" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: theme.text, lineHeight: 1.2 }}>ProspectKit</div>
-          <div style={{ fontSize: 10, color: theme.dim, lineHeight: 1 }}>{workspace?.name || "by RamosMKT"}</div>
+          <div style={{ fontSize: 10, color: theme.dim, lineHeight: 1 }}>{workspace?.name || "by RamosGrowth"}</div>
         </div>
       </div>
 

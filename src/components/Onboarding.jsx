@@ -52,7 +52,7 @@ export function Onboarding({ onCreateProspect }) {
             Bienvenido a ProspectKit
           </div>
           <div style={{ fontSize: 14, color: theme.muted }}>
-            Tu CRM de ventas para RamosMKT
+            Tu CRM de ventas para RamosGrowth
           </div>
         </div>
 
