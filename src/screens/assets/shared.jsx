@@ -26,8 +26,9 @@ export const BASE = {
 };
 
 // Branding RamosGrowth
-// variant="horizontal" → logo horizontal solo (para flyers)
-// variant="stacked"    → horizontal + reducido apilados (para showcase)
+// variant="horizontal" → logo horizontal solo
+// variant="stacked"    → horizontal + reducido apilados (showcase)
+// variant="inline"     → isotipo + horizontal lado a lado (flyers)
 export function Brand({ size = "md", variant = "horizontal" }) {
   const h = size === "sm" ? 22 : size === "lg" ? 36 : 28;
   if (variant === "stacked") {
@@ -35,6 +36,14 @@ export function Brand({ size = "md", variant = "horizontal" }) {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
         <img src="/logo-horizontal.png" alt="RamosGrowth" style={{ height: h * 0.7, objectFit: "contain" }} />
         <img src="/logo-rmkt-transparente.png" alt="RMKT" style={{ height: h, objectFit: "contain" }} />
+      </div>
+    );
+  }
+  if (variant === "inline") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <img src="/logo-rmkt-transparente.png" alt="RMKT" style={{ height: h, objectFit: "contain" }} />
+        <img src="/logo-horizontal.png" alt="RamosGrowth" style={{ height: h * 0.7, objectFit: "contain" }} />
       </div>
     );
   }

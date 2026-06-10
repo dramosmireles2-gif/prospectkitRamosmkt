@@ -142,7 +142,7 @@ function FlyerOscuro({ ptype, bullets, photoSrc, format }) {
         {/* Contenido texto */}
         <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18, zIndex: 2, position: "relative" }}>
           <div style={{ alignSelf: "flex-start" }}>
-            <Brand size="lg" />
+            <Brand size="lg" variant="inline" />
           </div>
           <div style={{ fontSize: hookSize }}>
             <HookText hook={ptype.hook} accent={ptype.hookAccent} dark />
@@ -171,7 +171,7 @@ function FlyerOscuro({ ptype, bullets, photoSrc, format }) {
       <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "linear-gradient(160deg, #0a0a0f 60%, #0d1a12 100%)", padding: "48px 56px" }}>
         <Glow color={R.accent} top={-80} right={-80} size={400} />
         <div style={{ marginBottom: 28, alignSelf: "flex-start" }}>
-          <Brand size="lg" />
+          <Brand size="lg" variant="inline" />
         </div>
         <div style={{ fontSize: 68, marginBottom: 20 }}>
           <HookText hook={ptype.hook} accent={ptype.hookAccent} dark />
@@ -201,7 +201,7 @@ function FlyerOscuro({ ptype, bullets, photoSrc, format }) {
         }
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.8) 100%)" }} />
         <div style={{ position: "absolute", top: 44, left: 48 }}>
-          <Brand size="lg" />
+          <Brand size="lg" variant="inline" />
         </div>
       </div>
       <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: 24 }}>
@@ -238,7 +238,7 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
         )}
         <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18, zIndex: 2, position: "relative" }}>
           <div style={{ alignSelf: "flex-start" }}>
-            <Brand size="lg" />
+            <Brand size="lg" variant="inline" />
           </div>
           <div style={{ fontSize: hookSize }}>
             <HookText hook={ptype.hook} accent={ptype.hookAccent} dark={false} />
@@ -275,7 +275,7 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
     return (
       <div style={{ ...BASE, display: "flex", flexDirection: "column", background: "#ffffff", padding: "48px 56px" }}>
         <div style={{ marginBottom: 24, alignSelf: "flex-start" }}>
-          <Brand size="lg" />
+          <Brand size="lg" variant="inline" />
         </div>
         <div style={{ fontSize: 68, marginBottom: 20 }}>
           <HookText hook={ptype.hook} accent={ptype.hookAccent} dark={false} />
@@ -313,7 +313,7 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
             </div>
         }
         <div style={{ position: "absolute", top: 44, left: 48 }}>
-          <Brand size="lg" />
+          <Brand size="lg" variant="inline" />
         </div>
       </div>
       <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: 24 }}>
