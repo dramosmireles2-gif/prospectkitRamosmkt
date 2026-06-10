@@ -357,7 +357,25 @@ const INDUSTRY_VISUAL = {
   otro:       { scene: "espacio de negocio moderno y profesional, ambiente limpio y ordenado", mood: "profesional, confiable, moderno", palette: "neutros con un color de acento" },
 };
 
-function buildImagePrompt(prospect, ptype, templateId) {
+const FORMAT_COMPOSITION = {
+  landscape: {
+    size: "1200×630px (horizontal)",
+    composition: "Subject on the RIGHT side (40% of the frame). LEFT 60% must be completely clean and dark/blurred — this is where text overlays will go. Subject centered vertically.",
+    crop: "Wide horizontal frame. Think of a movie still: subject far right, empty moody space on the left.",
+  },
+  square: {
+    size: "1080×1080px (square)",
+    composition: "Subject centered horizontally but positioned in the BOTTOM 60% of the frame. TOP 40% must be clean, blurred or plain background — this is where text overlays will go.",
+    crop: "Square frame. Subject anchored at the bottom, negative space at the top.",
+  },
+  story: {
+    size: "1080×1920px (vertical)",
+    composition: "Subject in the BOTTOM THIRD of the frame (roughly bottom 640px). TOP 60% must be clean, blurred or plain background — this is where large headline text will go.",
+    crop: "Tall vertical frame. Strong subject at the bottom, wide empty space at the top.",
+  },
+};
+
+function buildImagePrompt(prospect, ptype, templateId, formatId = "landscape") {
   const typeKey = detectProjectType(prospect?.industry || "", prospect?.notes || "");
   const visual = INDUSTRY_VISUAL[typeKey] || INDUSTRY_VISUAL.otro;
   const isDark = templateId === "flyer-oscuro";
@@ -365,26 +383,28 @@ function buildImagePrompt(prospect, ptype, templateId) {
   const city = prospect?.city ? ` en ${prospect.city}` : "";
   const missing = (prospect?.analysis?.missingFeatures || []).filter(f => f.critical).slice(0, 2);
   const context = missing.length
-    ? `El negocio actualmente no tiene: ${missing.map(f => f.name).join(", ")}.`
+    ? `The business currently lacks: ${missing.map(f => f.name).join(", ")}.`
     : "";
+  const fc = FORMAT_COMPOSITION[formatId] || FORMAT_COMPOSITION.landscape;
 
-  return `Photorealistic marketing photo for a digital flyer targeting ${ptype.label} businesses${city}.
+  return `Photorealistic marketing photo for a ${fc.size} digital flyer. Target: ${ptype.label} business${city}.
 
-SCENE: ${visual.scene}. The image must have a clear subject on the RIGHT side (40% of the frame) and a darker, blurred or plain area on the LEFT side (60%) where text will be placed.
-
+SCENE: ${visual.scene}.
 MOOD: ${visual.mood}. High-end commercial photography style.
-COLOR PALETTE: ${isDark ? `Dark background (#0a0a0f near black), ${visual.palette}, subtle green accent glow (#00ff88)` : `Clean white or very light background, ${visual.palette}, fresh and minimal`}.
+COLOR PALETTE: ${isDark ? `Dark near-black background (#0a0a0f), ${visual.palette}, subtle green accent glow (#00ff88).` : `Clean white or very light background, ${visual.palette}, fresh and minimal.`}
 
-COMPOSITION RULES (critical):
-- Subject centered vertically, positioned on the right third
-- Left 60% must be clean, dark/blurred background — NO elements there
-- No text, no logos, no watermarks anywhere
-- No people's faces in close-up (business environment only)
+COMPOSITION (critical — read carefully):
+${fc.composition}
+${fc.crop}
+
+RULES:
+- No text, no logos, no watermarks anywhere in the image
+- No people's faces visible (environment and objects only)
 - Sharp subject, soft bokeh background
+- The empty area must be very clean — solid dark or solid light, almost no detail
 
-TECHNICAL: Square format 1:1 ratio (1080×1080px), so it crops well to landscape (1200×630) and story (1080×1920). Shot at f/2.8, natural + studio lighting. Ultra realistic, 8K detail.
-
-CONTEXT: ${context} This image will be used in a prospecting flyer for RamosGrowth digital agency to approach ${name}.`.trim();
+TECHNICAL: ${fc.size}, shot at f/2.8, natural + studio lighting, ultra realistic, 8K.
+${context ? `\nCONTEXT: ${context} Image for RamosGrowth agency prospecting flyer for ${name}.` : `Image for RamosGrowth agency prospecting flyer for ${name}.`}`.trim();
 }
 
 // ─── Main component ─────────────────────────────────────────────────────────
@@ -436,7 +456,7 @@ export function ProspectingTab({ prospect, proposals, format }) {
   }
 
   const copyImagePrompt = useCallback(() => {
-    const prompt = buildImagePrompt(prospect, ptype, templateId);
+    const prompt = buildImagePrompt(prospect, ptype, templateId, fmt.id);
     navigator.clipboard.writeText(prompt).then(() => {
       setPromptCopied(true);
       setTimeout(() => setPromptCopied(false), 2500);
@@ -498,10 +518,10 @@ export function ProspectingTab({ prospect, proposals, format }) {
           style={{ padding: "10px 13px", borderRadius: 9, cursor: "pointer", background: promptCopied ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.03)", border: `1px solid ${promptCopied ? "rgba(0,255,136,0.3)" : "rgba(255,255,255,0.08)"}`, transition: "all 180ms ease" }}
         >
           <div style={{ fontSize: 12, fontWeight: 600, color: promptCopied ? R.accent : "rgba(255,255,255,0.7)", marginBottom: 3 }}>
-            {promptCopied ? "✓ Prompt copiado" : "📋 Copiar prompt"}
+            {promptCopied ? "✓ Prompt copiado" : `📋 Copiar prompt — ${fmtLabel[fmt.id]}`}
           </div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
-            Pégalo en ChatGPT o Midjourney para generar la foto del negocio
+            Composición optimizada para este formato
           </div>
         </div>
 
