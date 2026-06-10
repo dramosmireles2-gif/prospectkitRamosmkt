@@ -130,10 +130,17 @@ function FlyerOscuro({ ptype, bullets, photoSrc, format }) {
 
   if (isLandscape) {
     return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "linear-gradient(135deg, #0a0a0f 60%, #0d1a12 100%)" }}>
-        <Glow color={R.accent} top={-100} left={-100} size={500} />
-        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18, zIndex: 1 }}>
-          {/* Logo más grande, alineado izquierda */}
+      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "linear-gradient(135deg, #0a0a0f 60%, #0d1a12 100%)", position: "relative" }}>
+        {/* Foto como fondo completo cuando existe */}
+        {photoSrc && (
+          <>
+            <img src={photoSrc} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(5,8,6,0.97) 0%, rgba(5,8,6,0.88) 45%, rgba(5,8,6,0.3) 70%, transparent 100%)", zIndex: 1 }} />
+          </>
+        )}
+        {!photoSrc && <Glow color={R.accent} top={-100} left={-100} size={500} />}
+        {/* Contenido texto */}
+        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18, zIndex: 2, position: "relative" }}>
           <div style={{ alignSelf: "flex-start" }}>
             <Brand size="lg" />
           </div>
@@ -149,15 +156,12 @@ function FlyerOscuro({ ptype, bullets, photoSrc, format }) {
           <WACta dark />
           <ServiceFooter dark />
         </div>
-        <div style={{ flex: 0.8, position: "relative", overflow: "hidden" }}>
-          {photoSrc
-            ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : <div style={{ width: "100%", height: "100%", background: "rgba(0,255,136,0.03)", display: "flex", alignItems: "center", justifyContent: "center", borderLeft: "1px dashed rgba(0,255,136,0.1)" }}>
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 13 }}>📷<br/>Foto del negocio</div>
-              </div>
-          }
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, #0a0a0f 0%, transparent 30%)" }} />
-        </div>
+        {/* Panel derecho: placeholder cuando no hay foto */}
+        {!photoSrc && (
+          <div style={{ flex: 0.8, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderLeft: "1px dashed rgba(0,255,136,0.1)", zIndex: 2 }}>
+            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.15)", fontSize: 13 }}>📷<br/>Foto del negocio</div>
+          </div>
+        )}
       </div>
     );
   }
@@ -225,8 +229,14 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
 
   if (isLandscape) {
     return (
-      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "#ffffff" }}>
-        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18 }}>
+      <div style={{ ...BASE, display: "flex", flexDirection: "row", background: "#f8fafb", position: "relative" }}>
+        {photoSrc && (
+          <>
+            <img src={photoSrc} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 45%, rgba(255,255,255,0.4) 70%, transparent 100%)", zIndex: 1 }} />
+          </>
+        )}
+        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", padding: "36px 48px", gap: 18, zIndex: 2, position: "relative" }}>
           <div style={{ alignSelf: "flex-start" }}>
             <Brand size="lg" />
           </div>
@@ -252,14 +262,11 @@ function FlyerClaro({ ptype, bullets, photoSrc, format }) {
             </div>
           </div>
         </div>
-        <div style={{ flex: 0.8, position: "relative", overflow: "hidden" }}>
-          {photoSrc
-            ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : <div style={{ width: "100%", height: "100%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ textAlign: "center", color: "#86efac", fontSize: 13 }}>📷<br/>Foto del negocio</div>
-              </div>
-          }
-        </div>
+        {!photoSrc && (
+          <div style={{ flex: 0.8, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ textAlign: "center", color: "#86efac", fontSize: 13 }}>📷<br/>Foto del negocio</div>
+          </div>
+        )}
       </div>
     );
   }
