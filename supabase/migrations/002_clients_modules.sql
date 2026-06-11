@@ -113,33 +113,21 @@ alter table renewals enable row level security;
 alter table tasks enable row level security;
 alter table activity_logs enable row level security;
 
--- Policies (same pattern as prospects)
+-- Policies (same pattern as prospects — uses is_workspace_member helper)
 create policy "workspace members can manage clients"
-  on clients for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on clients for all using (public.is_workspace_member(workspace_id));
 
 create policy "workspace members can manage client_services"
-  on client_services for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on client_services for all using (public.is_workspace_member(workspace_id));
 
 create policy "workspace members can manage payments"
-  on payments for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on payments for all using (public.is_workspace_member(workspace_id));
 
 create policy "workspace members can manage renewals"
-  on renewals for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on renewals for all using (public.is_workspace_member(workspace_id));
 
 create policy "workspace members can manage tasks"
-  on tasks for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on tasks for all using (public.is_workspace_member(workspace_id));
 
 create policy "workspace members can manage activity_logs"
-  on activity_logs for all using (
-    workspace_id in (select workspace_id from workspace_memberships where user_id = auth.uid())
-  );
+  on activity_logs for all using (public.is_workspace_member(workspace_id));
