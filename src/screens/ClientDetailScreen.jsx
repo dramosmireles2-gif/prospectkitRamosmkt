@@ -9,6 +9,7 @@ import {
   listTasks, createTask, updateTask, deleteTask,
   listActivityLogs, createActivityLog
 } from "../services/clients";
+import { PROJECT_STAGES } from "./ClientsScreen";
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 
@@ -627,6 +628,7 @@ function InfoTab({ client, onUpdate, onDelete }) {
       email: client.email || "",
       city: client.city || "",
       status: client.status || "activo",
+      project_stage: client.project_stage || "",
       started_at: client.started_at || "",
       notes: client.notes || ""
     });
@@ -672,7 +674,7 @@ function InfoTab({ client, onUpdate, onDelete }) {
             </Field>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Estado">
+            <Field label="Estado del cliente">
               <select style={inputStyle} value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
                 {CLIENT_STATUS_LIST.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
@@ -681,6 +683,17 @@ function InfoTab({ client, onUpdate, onDelete }) {
               <input style={inputStyle} type="date" value={form.started_at} onChange={(e) => setForm((f) => ({ ...f, started_at: e.target.value }))} />
             </Field>
           </div>
+          <Field label="Etapa del proyecto">
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {PROJECT_STAGES.map((s) => (
+                <button key={s.id} type="button" onClick={() => setForm((f) => ({ ...f, project_stage: s.id }))} style={{
+                  fontSize: 11, padding: "6px 14px", borderRadius: 20, cursor: "pointer", fontWeight: 600, border: "none",
+                  background: form.project_stage === s.id ? s.color : "#111",
+                  color: form.project_stage === s.id ? "#000" : theme.muted
+                }}>{s.label}</button>
+              ))}
+            </div>
+          </Field>
           <Field label="Notas generales">
             <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
           </Field>
@@ -763,25 +776,72 @@ export function ClientDetailScreen({ client, workspaceId, onBack, onUpdate, onDe
 
   const stColor = CLIENT_STATUS_LIST.find((s) => s.id === client.status)?.color || "#777";
 
+  const ps = PROJECT_STAGES.find((s) => s.id === client.project_stage);
+  const psIdx = PROJECT_STAGES.findIndex((s) => s.id === client.project_stage);
+
+  async function handleProjectStage(stageId) {
+    const updated = await updateClient({ ...client, project_stage: stageId });
+    onUpdate(updated);
+  }
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ minHeight: 58, borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: 12, padding: isMobile ? "12px 16px" : "0 28px", flexShrink: 0 }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>←</button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</div>
-          <div style={{ fontSize: 11, color: theme.muted }}>
-            {client.city && `${client.city} · `}
-            <span style={{ color: stColor, fontWeight: 700 }}>
-              {CLIENT_STATUS_LIST.find((s) => s.id === client.status)?.label}
-            </span>
+      <div style={{ borderBottom: `1px solid ${theme.border}`, padding: isMobile ? "12px 16px" : "10px 28px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: ps ? 10 : 0 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>←</button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</div>
+            <div style={{ fontSize: 11, color: theme.muted, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              {client.city && <span>{client.city}</span>}
+              <span style={{ color: stColor, fontWeight: 700 }}>
+                {CLIENT_STATUS_LIST.find((s) => s.id === client.status)?.label}
+              </span>
+              {client.whatsapp && <span>{client.whatsapp}</span>}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {client.github_url && (
+              <a href={client.github_url} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="secondary">🐙 GitHub</Button>
+              </a>
+            )}
+            {client.whatsapp && (
+              <a href={`https://wa.me/${client.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="secondary">💬</Button>
+              </a>
+            )}
           </div>
         </div>
-        {client.whatsapp && (
-          <a href={`https://wa.me/${client.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
-            <Button size="sm" variant="secondary">💬 WhatsApp</Button>
-          </a>
-        )}
+
+        {/* Project stage pipeline bar */}
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          {PROJECT_STAGES.map((s, i) => {
+            const isActive = s.id === client.project_stage;
+            const isPast = psIdx >= 0 && i < psIdx;
+            const stageColor = isActive ? ps?.color : isPast ? `${ps?.color}55` : theme.s3;
+            return (
+              <button
+                key={s.id}
+                onClick={() => handleProjectStage(s.id)}
+                title={s.label}
+                style={{
+                  flex: 1, height: isActive ? 28 : 22, borderRadius: 6, border: "none", cursor: "pointer",
+                  background: stageColor,
+                  transition: "all 0.15s",
+                  fontSize: isActive ? 10 : 0,
+                  fontWeight: 700,
+                  color: "#000",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  padding: isActive ? "0 6px" : 0
+                }}
+              >
+                {isActive ? s.label : ""}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tabs */}

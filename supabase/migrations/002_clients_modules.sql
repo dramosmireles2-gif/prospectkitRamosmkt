@@ -14,6 +14,8 @@ create table if not exists clients (
   status text not null default 'activo', -- activo | pausado | perdido
   started_at date not null default current_date,
   notes text,
+  -- Etapa del proyecto
+  project_stage text default 'inicio', -- inicio | desarrollo | revision | entregado | mantenimiento
   -- Recursos digitales
   website_url text,
   github_url text,
