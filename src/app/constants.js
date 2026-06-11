@@ -19,7 +19,13 @@ export const VIEWS = {
   ROI: "roi",
   LTV: "ltv",
   GAP: "gap",
-  PROPOSAL: "proposal"
+  PROPOSAL: "proposal",
+  // Módulo de Clientes
+  CLIENTS: "clients",
+  CLIENT_DETAIL: "client_detail",
+  PAYMENTS: "payments",
+  RENEWALS: "renewals",
+  TASKS: "tasks"
 };
 
 export const PROSPECT_VIEWS = [VIEWS.DETAIL, VIEWS.ANALYSIS, VIEWS.KIT, VIEWS.ASSETS, VIEWS.ROI, VIEWS.LTV, VIEWS.GAP, VIEWS.PROPOSAL];

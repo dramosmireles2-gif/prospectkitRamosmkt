@@ -6,6 +6,7 @@ import { PIPELINE_STAGES, NEXT_ACTION_TYPES } from "../app/constants";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { formatServicePricing } from "../services/serviceCatalog";
 import { getProposalPricingSummary, getProspectCommercialSnapshot } from "../services/proposals";
+import { buildClientMetrics } from "../services/clients";
 
 function scoreColor(score) {
   if (score >= 85) return theme.accent;
@@ -23,7 +24,7 @@ function daysDiff(dateStr) {
   return Math.floor((today - target) / 86400000);
 }
 
-export function DashboardScreen({ prospects, metrics, proposals = [], activeProposalMap = {}, onOpenView, onSelectProspect, onSeedDemo, loading, onCreateProspect }) {
+export function DashboardScreen({ prospects, metrics, proposals = [], activeProposalMap = {}, onOpenView, onSelectProspect, onSeedDemo, loading, onCreateProspect, clients = [], payments = [], renewals = [], tasks = [] }) {
   const isMobile = useIsMobile();
 
   if (!prospects.length) {
@@ -62,30 +63,35 @@ export function DashboardScreen({ prospects, metrics, proposals = [], activeProp
     .sort((a, b) => a.nextActionDate.localeCompare(b.nextActionDate))
     .slice(0, 5);
 
+  const clientMetrics = buildClientMetrics({ clients, payments, renewals, tasks });
+
   const kpiCards = [
     {
-      label: "Ingreso Recurrente Activo",
-      sublabel: "MRR",
-      value: formatCompactCurrency(mrr),
-      color: theme.accent
+      label: "Clientes activos",
+      sublabel: "Módulo Clientes",
+      value: clientMetrics.activeClients,
+      color: theme.accent,
+      onClick: () => onOpenView("clients")
     },
     {
-      label: "Pipeline 1er ano",
-      sublabel: "Propuestas activas",
-      value: formatCompactCurrency(pipeline),
+      label: "MRR Clientes",
+      sublabel: "Mensual recurrente",
+      value: formatCompactCurrency(clientMetrics.mrr || mrr),
       color: theme.blue
     },
     {
-      label: "Tasa de Conversión",
-      sublabel: "Prospectos ganados",
-      value: `${convRate}%`,
-      color: theme.yellow
+      label: "Pagos pendientes",
+      sublabel: "Por cobrar",
+      value: clientMetrics.pendingPayments.length,
+      color: clientMetrics.overduePayments.length > 0 ? theme.red : theme.yellow,
+      onClick: () => onOpenView("payments")
     },
     {
-      label: "Prospectos Calientes",
-      sublabel: "Urgente o caliente",
-      value: hotCount,
-      color: theme.red
+      label: "Renovaciones próximas",
+      sublabel: "30 días",
+      value: clientMetrics.upcomingRenewals.length,
+      color: clientMetrics.upcomingRenewals.length > 0 ? theme.yellow : theme.muted,
+      onClick: () => onOpenView("renewals")
     }
   ];
 
@@ -119,13 +125,15 @@ export function DashboardScreen({ prospects, metrics, proposals = [], activeProp
           {kpiCards.map((card) => (
             <div
               key={card.label}
+              onClick={card.onClick}
               style={{
                 background: theme.s2,
                 border: `1px solid ${theme.border}`,
                 borderRadius: 10,
                 padding: "16px 18px",
                 position: "relative",
-                overflow: "hidden"
+                overflow: "hidden",
+                cursor: card.onClick ? "pointer" : "default"
               }}
             >
               <div

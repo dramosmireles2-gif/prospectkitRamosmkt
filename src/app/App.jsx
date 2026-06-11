@@ -35,7 +35,16 @@ import { AttackPlanScreen } from "../screens/AttackPlanScreen";
 import { ProposalScreen } from "../screens/ProposalScreen";
 import { ProspectsScreen } from "../screens/ProspectsScreen";
 import { SetupScreen } from "../screens/SetupScreen";
+import { ClientsScreen } from "../screens/ClientsScreen";
+import { ClientDetailScreen } from "../screens/ClientDetailScreen";
+import { PaymentsScreen } from "../screens/PaymentsScreen";
+import { RenewalsScreen } from "../screens/RenewalsScreen";
+import { TasksScreen } from "../screens/TasksScreen";
 import { getActiveProposalMap, listProposals, listAllProposals, saveProposal } from "../services/proposals";
+import {
+  listClients, deleteClient, convertProspectToClient,
+  listPayments, listRenewals, listTasks, buildClientMetrics
+} from "../services/clients";
 
 function FullscreenLoader({ label }) {
   const [slow, setSlow] = useState(false);
@@ -106,6 +115,14 @@ function AppContent() {
   const [proposals, setProposals] = useState([]);
   const [allProposals, setAllProposals] = useState([]);
   const [savingProposal, setSavingProposal] = useState(false);
+  // Clients module state
+  const [clients, setClients] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [renewals, setRenewals] = useState([]);
+  const [tasks, setTasks] = useState([]);
+
+  const selectedClient = clients.find((c) => c.id === selectedClientId) || null;
 
   const selectedProspect = prospects.find((prospect) => prospect.id === selectedProspectId) || null;
   const activeProposalMap = getActiveProposalMap(allProposals);
@@ -117,6 +134,10 @@ function AppContent() {
     if (!workspace) {
       setProspects([]);
       setSelectedProspectId(null);
+      setClients([]);
+      setPayments([]);
+      setRenewals([]);
+      setTasks([]);
       return;
     }
 
@@ -124,6 +145,19 @@ function AppContent() {
       console.error("Error loading prospects", error);
       setToast({ tone: "error", message: error.message || "No se pudieron cargar los prospectos." });
     });
+
+    // Load clients module data
+    Promise.all([
+      listClients(workspace.id),
+      listPayments(workspace.id),
+      listRenewals(workspace.id),
+      listTasks(workspace.id)
+    ]).then(([cls, pays, renews, tsks]) => {
+      setClients(cls);
+      setPayments(pays);
+      setRenewals(renews);
+      setTasks(tsks);
+    }).catch(console.error);
   }, [workspace?.id]);
 
   useEffect(() => {
@@ -444,6 +478,10 @@ function AppContent() {
       onSeedDemo={handleSeedDemo}
       loading={busy === "demo"}
       onCreateProspect={() => { setOpenNewProspect(true); navigate(VIEWS.PROSPECTS); }}
+      clients={clients}
+      payments={payments}
+      renewals={renewals}
+      tasks={tasks}
     />
   );
 
@@ -526,6 +564,17 @@ function AppContent() {
           setSelectedProspectId(prospect.id);
           setView(prospect.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
         }}
+        onConvertToClient={async (prospect) => {
+          try {
+            const client = await convertProspectToClient(workspace.id, prospect);
+            setClients((prev) => [client, ...prev]);
+            setSelectedClientId(client.id);
+            setView(VIEWS.CLIENT_DETAIL);
+            setToast({ tone: "success", message: `${prospect.name} convertido a cliente ✓` });
+          } catch (err) {
+            setToast({ tone: "error", message: err.message || "No se pudo convertir el prospecto." });
+          }
+        }}
       />
     );
   }
@@ -589,6 +638,78 @@ function AppContent() {
     );
   }
 
+  // ─── Clients module ───────────────────────────────────────────────────────
+
+  if (view === VIEWS.CLIENTS) {
+    screen = (
+      <ClientsScreen
+        clients={clients}
+        workspaceId={workspace?.id}
+        onSelectClient={(client) => { setSelectedClientId(client.id); setView(VIEWS.CLIENT_DETAIL); }}
+        onClientCreated={(client) => setClients((prev) => [client, ...prev])}
+      />
+    );
+  }
+
+  if (view === VIEWS.CLIENT_DETAIL) {
+    screen = (
+      <ClientDetailScreen
+        client={selectedClient}
+        workspaceId={workspace?.id}
+        onBack={() => setView(VIEWS.CLIENTS)}
+        onUpdate={(updated) => setClients((prev) => prev.map((c) => c.id === updated.id ? updated : c))}
+        onDelete={async () => {
+          if (selectedClient) {
+            await deleteClient(selectedClient);
+            setClients((prev) => prev.filter((c) => c.id !== selectedClient.id));
+            setSelectedClientId(null);
+            setView(VIEWS.CLIENTS);
+          }
+        }}
+      />
+    );
+  }
+
+  if (view === VIEWS.PAYMENTS) {
+    screen = (
+      <PaymentsScreen
+        payments={payments}
+        clients={clients}
+        workspaceId={workspace?.id}
+        onPaymentsChange={(updated) => setPayments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
+      />
+    );
+  }
+
+  if (view === VIEWS.RENEWALS) {
+    screen = (
+      <RenewalsScreen
+        renewals={renewals}
+        clients={clients}
+        workspaceId={workspace?.id}
+        onRenewalsChange={(action, item) => {
+          if (action === "create") setRenewals((prev) => [...prev, item].sort((a, b) => (a.expires_at || "").localeCompare(b.expires_at || "")));
+          if (action === "update") setRenewals((prev) => prev.map((r) => r.id === item.id ? item : r));
+          if (action === "delete") setRenewals((prev) => prev.filter((r) => r.id !== item.id));
+        }}
+      />
+    );
+  }
+
+  if (view === VIEWS.TASKS) {
+    screen = (
+      <TasksScreen
+        tasks={tasks}
+        clients={clients}
+        workspaceId={workspace?.id}
+        onTasksChange={(action, item) => {
+          if (action === "update") setTasks((prev) => prev.map((t) => t.id === item.id ? item : t));
+          if (action === "delete") setTasks((prev) => prev.filter((t) => t.id !== item.id));
+        }}
+      />
+    );
+  }
+
   if (isMobile) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: theme.bg, overflow: "hidden" }}>
@@ -604,6 +725,7 @@ function AppContent() {
           workspace={workspace}
           onSignOut={signOut}
           prospects={prospects}
+          clients={clients}
           onOpenProspect={(p) => {
             setSelectedProspectId(p.id);
             setView(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);
@@ -625,6 +747,7 @@ function AppContent() {
         workspace={workspace}
         onSignOut={signOut}
         prospects={prospects}
+        clients={clients}
         onOpenProspect={(p) => {
           setSelectedProspectId(p.id);
           setView(p.analysis ? VIEWS.ANALYSIS : VIEWS.DETAIL);

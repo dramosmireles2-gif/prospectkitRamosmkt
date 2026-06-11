@@ -13,7 +13,7 @@ function scoreColor(s) {
   return theme.muted;
 }
 
-function PipelineCard({ prospect, activeProposal, onSelect, onDragStart, onUpdateStage, isMobile }) {
+function PipelineCard({ prospect, activeProposal, onSelect, onDragStart, onUpdateStage, isMobile, onConvert }) {
   const [hovered, setHovered] = useState(false);
   const pricingSnapshot = getProspectCommercialSnapshot(prospect, activeProposal);
 
@@ -102,11 +102,20 @@ function PipelineCard({ prospect, activeProposal, onSelect, onDragStart, onUpdat
           ))}
         </select>
       ) : null}
+
+      {prospect.pipelineStage === "ganado" && onConvert && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onConvert(prospect); }}
+          style={{ marginTop: 4, fontSize: 11, fontWeight: 700, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,136,0.12)", color: "#00ff88", width: "100%", textAlign: "center" }}
+        >
+          ◈ Convertir a Cliente
+        </button>
+      )}
     </div>
   );
 }
 
-function PipelineColumn({ stage, prospects, activeProposalMap, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage }) {
+function PipelineColumn({ stage, prospects, activeProposalMap, onDragOver, onDrop, onSelect, onDragStart, isDragOver, isMobile, onUpdateStage, onConvert }) {
   const totalRevenue = prospects.reduce((sum, prospect) => sum + (getProspectCommercialSnapshot(prospect, activeProposalMap?.[prospect.id]).pricingSummary?.firstYear?.min || 0), 0);
 
   return (
@@ -159,6 +168,7 @@ function PipelineColumn({ stage, prospects, activeProposalMap, onDragOver, onDro
             onDragStart={onDragStart}
             onUpdateStage={onUpdateStage}
             isMobile={isMobile}
+            onConvert={onConvert}
           />
         ))}
         {prospects.length === 0 && (
@@ -231,7 +241,7 @@ function PipelineMetrics({ prospects, activeProposalMap, isMobile = false }) {
   );
 }
 
-export function PipelineScreen({ prospects, activeProposalMap = {}, onUpdateStage, onSelectProspect }) {
+export function PipelineScreen({ prospects, activeProposalMap = {}, onUpdateStage, onSelectProspect, onConvertToClient }) {
   const isMobile = useIsMobile();
   const [dragOverStage, setDragOverStage] = useState(null);
   const dragProspectId = useRef(null);
@@ -319,6 +329,7 @@ export function PipelineScreen({ prospects, activeProposalMap = {}, onUpdateStag
             onDragStart={handleDragStart}
             isMobile={isMobile}
             onUpdateStage={onUpdateStage}
+            onConvert={onConvertToClient}
           />
         ))}
       </div>

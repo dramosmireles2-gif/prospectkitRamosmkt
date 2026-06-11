@@ -282,7 +282,7 @@ function NavItem({ id, label, icon, indent, active, onClick, badge }) {
   );
 }
 
-export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false, prospects = [], onOpenProspect }) {
+export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut, isMobile = false, prospects = [], clients = [], onOpenProspect }) {
   const [q, setQ] = useState("");
   const today = new Date().toISOString().split("T")[0];
   const overdueCount = prospects.filter(p => p.nextActionDate && p.nextActionDate <= today).length;
@@ -292,6 +292,13 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
     { id: "prospects", label: "Prospectos",    icon: "◉" },
     { id: "pipeline",  label: "Pipeline",      icon: "⬦" },
     { id: "attack",    label: "Plan de Ataque",icon: "⚡" }
+  ];
+
+  const clientsNav = [
+    { id: "clients",  label: "Clientes",      icon: "◈" },
+    { id: "payments", label: "Pagos",          icon: "💰" },
+    { id: "renewals", label: "Renovaciones",   icon: "🔁" },
+    { id: "tasks",    label: "Tareas",         icon: "☑" }
   ];
 
   const prospectNav = prospect
@@ -327,7 +334,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
           style={{
             width: "100%",
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(5, 1fr)",
             gap: 8,
             padding: 6,
             background: theme.s1,
@@ -336,7 +343,7 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
             boxShadow: "0 -8px 24px rgba(0,0,0,0.28)"
           }}
         >
-          {navigation.map((item) => {
+          {[...navigation, { id: "clients", label: "Clientes", icon: "◈" }].map((item) => {
             const active = view === item.id;
             return (
               <div
@@ -399,6 +406,13 @@ export function Sidebar({ view, setView, prospect, profile, workspace, onSignOut
 
       {navigation.map((item) => (
         <NavItem key={item.id} {...item} active={view === item.id} onClick={setView} />
+      ))}
+
+      <div style={{ fontSize: 9, color: theme.dim, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, padding: "14px 10px 4px" }}>
+        Clientes
+      </div>
+      {clientsNav.map((item) => (
+        <NavItem key={item.id} {...item} active={view === item.id || (item.id === "clients" && view === "client_detail")} onClick={setView} />
       ))}
 
       {prospects.length > 0 && (
